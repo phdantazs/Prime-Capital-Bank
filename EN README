@@ -1,0 +1,32 @@
+## Prime Capital Bank
+
+A banking system developed in C# using .NET, created to practice programming logic, data structures, and fundamental software developmente concepts.
+
+This project is part of my portfolio and will be gradually expanded with new features, simulating functionalities commonly found in real-word banking systems.
+
+## Current Features
+- Bank account creation.
+- Login.
+- Deposit.
+- Withdrawal.
+- Money transfer between accounts.
+- Interactive console menu.
+- User input validation.
+
+## Upcoming Features
+- Login using account number and password.
+- Restrict operations to authenticated users.
+- Password change functionality.
+- Login attempt validation.
+- Investiment Area (Financial investmente simulation, investment return calculation, invested assests overview and investment withdrawal).
+- Income Tax Calculator (Monthly income registration, annual average salary calculation, income tax based estimation based on the current tax brackets and income and tax reporting).
+
+## Technologies
+- C#
+- .NET
+- SQL Server
+- Console Application
+- Github
+
+## Author
+Developed by Pedro Henrique dos Santos Dantas.
