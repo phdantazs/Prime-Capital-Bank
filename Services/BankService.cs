@@ -12,14 +12,63 @@ public class BankService
     private readonly CustomerService _customerService;
     private readonly AccountService _accountService;
     private readonly AuthenticationService _authenticationService;
-    private int nextAccountNumber = 1001;
-
     public BankService()
     {
         _customerService = new CustomerService(customers);
         _accountService = new AccountService();
         _authenticationService = new AuthenticationService();
     }
+public void Start()
+{
+    Console.WriteLine("==================================");
+    Console.WriteLine(@"     🏦 𝐏𝐫𝐢𝐦𝐞 𝐂𝐚𝐩𝐢𝐭𝐚𝐥 𝐁𝐚𝐧𝐤 🏦     ");
+    Console.WriteLine("==================================");
+
+    Console.WriteLine("\nWelcome to Prime Capital Bank! How we can help you?");
+
+while (true)
+{
+    Console.WriteLine("\n============== MENU ==============");
+    Console.WriteLine("\n1 - Open an account.");
+    Console.WriteLine("2 - Sign In.");
+    Console.WriteLine("3 - Show Registered accounts.");
+    Console.WriteLine("4 - Exit\n");
+    
+    Console.Write("\nChoose an option: ");
+    
+    if (!int.TryParse(Console.ReadLine(), out int selectedOption))
+    {
+        Console.WriteLine("\nInvalid option.");
+        continue;
+    }
+
+    switch (selectedOption)
+    {
+        case 1:
+            CreateAccount();
+            break;
+        
+        case 2:
+            SignIn();
+            break;
+
+        case 3:
+            ShowRegisteredAccounts();
+            break;
+
+        case 4:
+            Console.WriteLine("\nFinalizing session...");
+            Thread.Sleep(1500);
+            Environment.Exit(0);
+            break;
+
+        default:
+            Console.WriteLine("\nInvalid option.");
+            break;
+    }
+}
+
+}
 
 //********** CREATE ACCOUNT **********
 public void CreateAccount()
@@ -100,7 +149,7 @@ public void CreateAccount()
         Thread.Sleep(2000);
         return;
     }
-    
+
     AccountType accountType;
     
     if (option == 1)
@@ -118,7 +167,7 @@ public void CreateAccount()
             return;
         }
 
-    bool accountAlreadyExists = customer.Accounts.Any(account => account.AccountType == accountType);
+    bool accountAlreadyExists = customer.Accounts.Any(a => a.AccountType == accountType);
 
     if (accountAlreadyExists)
     {
@@ -127,13 +176,7 @@ public void CreateAccount()
         return;
     }
 
-    BankAccount account = new BankAccount
-    {
-        AccountType = accountType,
-        AccountNumber = _accountService.GenerateAccountNumber(accountType),
-        Balance = 0,
-        CreatedAt = DateTime.Now
-    };
+    BankAccount account = _accountService.CreateAccount(accountType);
 
     customer.Accounts.Add(account);
 
@@ -200,24 +243,6 @@ public void SignIn()
 
     Console.Write("Enter your PIN: ");
     string pin = _authenticationService.ReadPin()!;
-
-    while (pin.Length < 6)
-    {
-        ConsoleKeyInfo key = Console.ReadKey(true);
-
-        if (key.Key == ConsoleKey.Backspace && pin.Length > 0)
-        {
-            pin = pin[..^1];
-            Console.Write("\b \b");
-            continue;
-        }
-
-        if (char.IsDigit(key.KeyChar))
-        {
-            pin += key.KeyChar;
-            Console.Write("*");
-        }
-    }
 
     Console.WriteLine();
 

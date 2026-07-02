@@ -3,7 +3,6 @@ using PrimeCapitalBank.Models;
 
 namespace PrimeCapitalBank.Services;
 
-
 public class CustomerService
 {
     private readonly List<Customer> _customers;

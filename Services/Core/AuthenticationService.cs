@@ -1,5 +1,3 @@
-using System;
-
 namespace PrimeCapitalBank.Services;
 public class AuthenticationService
 {
