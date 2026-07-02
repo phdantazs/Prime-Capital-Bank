@@ -1,5 +1,8 @@
 # Prime Capital Bank
 
+## Version: 
+v0.1.0
+
 A banking system developed in C# using .NET, created to practice programming logic, data structures, and fundamental software development concepts.
 
 This project is part of my portfolio and will be gradually expanded with new features, simulating functionalities commonly found in real-world banking systems.

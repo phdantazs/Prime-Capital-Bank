@@ -1,5 +1,8 @@
 ## Prime Capital Bank
 
+## Versão: 
+v0.1.0
+
 Sistema bancário desenvolvido em C# utilizando .NET, criado com o objetivo de práticar a lógica de programação, estruturas de dados e conceitos fundamentais de desenvolvimento de software.
 
 Este projeto faz parte do meu portfólio e será expandido gradualmente com novas funcionalidades, simulando recursos encontrados em sistemas bancários reais.
