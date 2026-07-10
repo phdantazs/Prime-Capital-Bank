@@ -6,4 +6,6 @@ public class BankAccount
     public AccountType AccountType { get; set; }
     public decimal Balance { get; set; }
     public DateTime CreatedAt { get; set; }
+    public List<Transaction> Transactions { get; set; } = new();
+    
 }

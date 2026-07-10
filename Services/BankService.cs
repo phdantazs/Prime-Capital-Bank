@@ -20,7 +20,7 @@ public class BankService
     }
 public void Start()
 {
-    Console.WriteLine("==================================");
+    Console.WriteLine("\n==================================");
     Console.WriteLine(@"     🏦 𝐏𝐫𝐢𝐦𝐞 𝐂𝐚𝐩𝐢𝐭𝐚𝐥 𝐁𝐚𝐧𝐤 🏦     ");
     Console.WriteLine("==================================");
 
@@ -177,7 +177,7 @@ public void CreateAccount()
     }
 
     BankAccount account = _accountService.CreateAccount(accountType);
-
+    account.Owner = customer;
     customer.Accounts.Add(account);
 
     Console.Clear();
@@ -287,8 +287,112 @@ public void SignIn()
     Console.WriteLine($"Account No.  : {loggedAccount.AccountNumber}");
     Console.WriteLine($"Balance      : ${loggedAccount.Balance:N2}");
 
-    Console.WriteLine("\nPress any key to continue...");
-    Console.ReadKey();
+    while (true)
+        {
+            Console.WriteLine("\n========== ACCOUNT MENU ==========");
+            Console.WriteLine("\n1 - Deposit");
+            Console.WriteLine("\n2 - Withdraw");
+            Console.WriteLine("\n3 - Transfer");
+            Console.WriteLine("\n4 - Statement");
+            Console.WriteLine("\n5 - Logout\n");
+
+            Console.WriteLine("What you need?: ");
+
+        if(!int.TryParse(Console.ReadLine(), out int selectedOption))
+        {
+            Console.WriteLine("\nInvalid option.");
+            continue;
+        }
+
+        switch (selectedOption)
+        {
+            case 1:
+                Console.Write("\nEnter the deposit ammount: ");
+
+                if (!decimal.TryParse(Console.ReadLine(), out decimal amount))
+                    {
+                        Console.WriteLine("\nInsuficient ammount.");
+                        Thread.Sleep(2000);
+                        break;
+                    }
+
+                _accountService.Deposit(loggedAccount, amount);
+
+                break;
+            
+            case 2:
+                Console.Write("\nEnter the withdrawal amount: ");
+
+                if (!decimal.TryParse(Console.ReadLine(), out decimal withdrawalAmount))
+                    {
+                        Console.WriteLine("\nInvalid amount.");
+                        Thread.Sleep(2000);
+                        break;
+                    }
+                _accountService.Withdraw(loggedAccount, withdrawalAmount);
+                break;
+                
+
+            case 3:
+                Console.Write("\nDestination account number: ");
+                string destinationAccountNumber = Console.ReadLine()!;
+
+                BankAccount? destinationAccount = null;
+
+                foreach (Customer customer in customers)
+                    {
+                        destinationAccount = customer.Accounts
+                            .FirstOrDefault(a => a.AccountNumber == destinationAccountNumber);
+
+                            if (destinationAccount != null)
+                            break;
+                    }
+
+                    if (destinationAccount == null)
+                    {
+                        Console.WriteLine("\nDestination account not found.");
+                        Thread.Sleep(2000);
+                        break;
+                    }
+                    
+                    if (destinationAccount == loggedAccount)
+                    {
+                        Console.WriteLine("\nYou cannot transfer to your own account.");
+                        Thread.Sleep(2000);
+                        break;
+                    }
+
+                    Console.WriteLine("\nTransfer amount: ");
+
+                    if (!decimal.TryParse(Console.ReadLine(), out decimal transferAmount))
+                    {
+                        Console.WriteLine("\nInvalid amount.");
+                        Thread.Sleep(2000);
+                        break;
+                    }
+
+                    _accountService.Transfer(loggedAccount, destinationAccount, transferAmount);
+
+                    break;
+
+            case 4:
+                _accountService.Statement(loggedAccount);
+                break;
+
+            case 5:
+                Console.WriteLine("\nLeaving menu...");
+                Thread.Sleep(1300);
+                return;
+
+        }
+        }
+}
 }
 
-}
+
+
+
+
+
+    
+    
