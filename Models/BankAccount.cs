@@ -7,5 +7,6 @@ public class BankAccount
     public decimal Balance { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<Transaction> Transactions { get; set; } = new();
+    public Customer Owner { get; set;} = null!;
     
 }

@@ -109,7 +109,7 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
         }
 
         originAccount.Balance -= amount;
-        destinationAccount.Balance += amount;
+        destinationAccount.Balance += amount; 
 
         originAccount.Transactions.Add(new Transaction
         {
@@ -139,7 +139,7 @@ public void Statement(BankAccount account)
         Console.Clear();
 
         Console.WriteLine("=========================");
-        Console.WriteLine("ACCOUNT STATEMENT");
+        Console.WriteLine("    ACCOUNT STATEMENT");
         Console.WriteLine("=========================");
 
     Console.WriteLine($"Account Number : {account.AccountNumber}");
@@ -148,7 +148,6 @@ public void Statement(BankAccount account)
     Console.WriteLine($"Current Balance: R$ {account.Balance:N2}");
 
     Console.WriteLine("\nTransactions");
-    Console.WriteLine("------------------------------------------------------------");
 
     if (account.Transactions.Count == 0)
     {
@@ -167,7 +166,7 @@ public void Statement(BankAccount account)
         }
     }
 
-    Console.WriteLine("------------------------------------------------------------");
+    Console.WriteLine("\n------------------------------------------------------------");
     Console.WriteLine("\nPress any key to return...");
     Console.ReadKey();
 }
