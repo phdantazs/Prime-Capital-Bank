@@ -57,10 +57,9 @@ while (true)
             break;
 
         case 4:
-            Console.WriteLine("\nFinalizing session...");
+            Console.WriteLine("\nLeaving menu...");
             Thread.Sleep(1500);
-            Environment.Exit(0);
-            break;
+            return;
 
         default:
             Console.WriteLine("\nInvalid option.");
@@ -109,21 +108,12 @@ public void CreateAccount()
     Customer? customer = _customerService.FindCustomerById(idNumber);
 
 // Se o cliente ainda não existir, cria um novo
+
+    string pin = string.Empty;
+
     if (customer == null)
     {
-        Console.WriteLine("\nCreate a 6-digit PIN:");
-        string pin = _authenticationService.ReadPin();
-
-        Console.WriteLine("\nConfirm your PIN: ");
-        string confirmPin = _authenticationService.ReadPin();
-
-        while (pin != confirmPin)
-        {
-            Console.WriteLine("\nPINs do not match. Try again.\n");
-
-            pin = _authenticationService.ReadPin();
-            confirmPin = _authenticationService.ReadPin();
-        }
+        pin = _authenticationService.CreatePin();
 
         customer = new Customer
         {
@@ -131,11 +121,14 @@ public void CreateAccount()
             BirthDate = birthDate,
             IdNumber = idNumber,
             MonthlyIncome = monthlyIncome,
-            Pin = pin
         };
 
         customers.Add(customer);
     }
+        else
+        {
+            pin = customer.Accounts.First().Pin;
+        }
 
     Console.WriteLine("\nChoose the account type:\n");
     Console.WriteLine("1 - Checking");
@@ -177,7 +170,9 @@ public void CreateAccount()
     }
 
     BankAccount account = _accountService.CreateAccount(accountType);
+    account.Pin = pin;
     account.Owner = customer;
+    
     customer.Accounts.Add(account);
 
     Console.Clear();
@@ -251,9 +246,6 @@ public void SignIn()
 
     foreach (Customer customer in customers)
     {
-        if (customer.Pin != pin)
-            continue;
-
         foreach (BankAccount account in customer.Accounts)
         {
             if (account.AccountNumber == accountNumber)
@@ -271,9 +263,16 @@ public void SignIn()
     if (loggedCustomer == null || loggedAccount == null)
     {
         Console.WriteLine("\nInvalid credentials.");
-        Thread.Sleep(2000);
+        Thread.Sleep(3000);
         return;
     }
+
+    if (!_authenticationService.Authenticate(loggedAccount, pin))
+        {
+            Thread.Sleep(3000);
+            return;
+        }
+            
 
     Console.Clear();
 
@@ -294,9 +293,10 @@ public void SignIn()
             Console.WriteLine("\n2 - Withdraw");
             Console.WriteLine("\n3 - Transfer");
             Console.WriteLine("\n4 - Statement");
-            Console.WriteLine("\n5 - Logout\n");
+            Console.WriteLine("\n5 - Change PIN");
+            Console.WriteLine("\n6 - Logout\n");
 
-            Console.WriteLine("What you need?: ");
+            Console.WriteLine("\nWhat you need?: ");
 
         if(!int.TryParse(Console.ReadLine(), out int selectedOption))
         {
@@ -380,6 +380,11 @@ public void SignIn()
                 break;
 
             case 5:
+                _authenticationService.ChangePin(loggedCustomer!);
+                Thread.Sleep(3000);
+                break;
+
+            case 6:
                 Console.WriteLine("\nLeaving menu...");
                 Thread.Sleep(1300);
                 return;

@@ -8,5 +8,10 @@ public class BankAccount
     public DateTime CreatedAt { get; set; }
     public List<Transaction> Transactions { get; set; } = new();
     public Customer Owner { get; set;} = null!;
-    
+
+    // Segurança da conta
+    public string Pin { get; set; } = string.Empty;
+    public int FailedLoginAttempts { get; set; } = 0;
+    public DateTime? BlockedUntil { get; set; }
+
 }
