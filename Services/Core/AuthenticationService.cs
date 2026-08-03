@@ -1,41 +1,19 @@
 using PrimeCapitalBank.Models;
-
 namespace PrimeCapitalBank.Services;
 public class AuthenticationService
+
 {
-    public string ReadPin()
-    {
-        string pin = "";
-
-        while (pin.Length < 6)
-        {
-            ConsoleKeyInfo key = Console.ReadKey(true);
-
-            if (key.Key == ConsoleKey.Backspace && pin.Length > 0)
-            {
-                pin = pin[..^1];
-                Console.Write("\b \b");
-                continue;
-            }
-
-            if (char.IsDigit(key.KeyChar))
-            {
-
-                pin += key.KeyChar;
-                Console.Write("*");
-            }
-        }
-
-        Console.WriteLine();
-        return pin;
+    private readonly InputService _inputService;
+    public AuthenticationService(InputService inputService)
+    {   
+        _inputService = inputService;
     }
-
     public string CreatePin(string? currentPin = null)
     {
         while (true)
         {
             Console.WriteLine("\nCreate a 6-digit PIN: ");
-            string pin = ReadPin();
+            string pin = _inputService.ReadPin();
 
             if (currentPin != null && pin == currentPin)
             {
@@ -44,7 +22,7 @@ public class AuthenticationService
             }
 
             Console.WriteLine("\nConfirm your PIN: ");
-            string confirmPin = ReadPin();
+            string confirmPin = _inputService.ReadPin();
 
             if (pin == confirmPin)
                 return pin;
@@ -101,7 +79,7 @@ public class AuthenticationService
     public void ChangePin(Customer customer)
     {
         Console.Write("\nEnter your current PIN: ");
-        string currentPin = ReadPin();
+        string currentPin = _inputService.ReadPin();
 
         if (customer.Accounts.First().Pin != currentPin)
         {

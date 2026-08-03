@@ -12,11 +12,17 @@ public class BankService
     private readonly CustomerService _customerService;
     private readonly AccountService _accountService;
     private readonly AuthenticationService _authenticationService;
+    private readonly InvestmentService _investmentService;
+    private readonly InputService _inputService;
     public BankService()
     {
         _customerService = new CustomerService(customers);
         _accountService = new AccountService();
-        _authenticationService = new AuthenticationService();
+
+        _inputService = new InputService();
+        _authenticationService = new AuthenticationService(_inputService);
+        _investmentService = new InvestmentService();
+        
     }
 public void Start()
 {
@@ -76,34 +82,15 @@ public void CreateAccount()
     Console.WriteLine("\n========== OPEN AN ACCOUNT ==========\n");
 
     Console.Write("\nPlease enter your full name: ");
-    string name = Console.ReadLine()!;
+    string fullName = _inputService.ReadFullName();
 
     Console.Write("\nWhat's your date of birth (dd/MM/yyyy): ");
-    DateTime birthDate = DateTime.Parse(Console.ReadLine()!);
+    DateTime birthDate = _inputService.ReadBirthDate();
 
-    string idNumber;
+    Console.Write("\nID Number: ");
+    string idNumber = _inputService.ReadIdNumber();
 
-    while (true)
-    {
-        Console.Write("\nID Number (Only numbers): ");
-        string input = Console.ReadLine()!;
-
-        //Remover qualquer caractere que não seja número
-        input = new string(input.Where(char.IsDigit).ToArray());
-
-        if (input.Length != 11)
-        {
-            Console.WriteLine("\nThe ID number must contain exactly 11 digits.\n");
-            continue;
-        }
-
-        //Formatar automaticamente para: XXX.XXX.XXX-YY
-        idNumber = Convert.ToUInt64(input).ToString(@"000\.000\.000\-00");
-        break;
-    }
-
-    Console.Write("\nApproximate monthly income: ");
-    decimal monthlyIncome = decimal.Parse(Console.ReadLine()!);
+    decimal monthlyIncome = _inputService.ReadMoney("\nApproximate monthly income: ");
 
     Customer? customer = _customerService.FindCustomerById(idNumber);
 
@@ -117,7 +104,7 @@ public void CreateAccount()
 
         customer = new Customer
         {
-            Name = name,
+            Name = fullName,
             BirthDate = birthDate,
             IdNumber = idNumber,
             MonthlyIncome = monthlyIncome,
@@ -237,7 +224,7 @@ public void SignIn()
     string accountNumber = Console.ReadLine()!;
 
     Console.Write("Enter your PIN: ");
-    string pin = _authenticationService.ReadPin()!;
+    string pin = _inputService.ReadPin()!;
 
     Console.WriteLine();
 
@@ -293,10 +280,11 @@ public void SignIn()
             Console.WriteLine("\n2 - Withdraw");
             Console.WriteLine("\n3 - Transfer");
             Console.WriteLine("\n4 - Statement");
-            Console.WriteLine("\n5 - Change PIN");
-            Console.WriteLine("\n6 - Logout\n");
+            Console.WriteLine("\n5 - Investments");
+            Console.WriteLine("\n6 - Change PIN");
+            Console.WriteLine("\n7 - Logout\n");
 
-            Console.WriteLine("\nWhat you need?: ");
+            Console.Write("\nWhat you need?: ");
 
         if(!int.TryParse(Console.ReadLine(), out int selectedOption))
         {
@@ -307,32 +295,15 @@ public void SignIn()
         switch (selectedOption)
         {
             case 1:
-                Console.Write("\nEnter the deposit ammount: ");
-
-                if (!decimal.TryParse(Console.ReadLine(), out decimal amount))
-                    {
-                        Console.WriteLine("\nInsuficient ammount.");
-                        Thread.Sleep(2000);
-                        break;
-                    }
-
+                decimal amount = _inputService.ReadMoney("Enter the deposit amount: ");
                 _accountService.Deposit(loggedAccount, amount);
-
                 break;
             
             case 2:
-                Console.Write("\nEnter the withdrawal amount: ");
-
-                if (!decimal.TryParse(Console.ReadLine(), out decimal withdrawalAmount))
-                    {
-                        Console.WriteLine("\nInvalid amount.");
-                        Thread.Sleep(2000);
-                        break;
-                    }
+                decimal withdrawalAmount = _inputService.ReadMoney("Withdrawal amount: ");
                 _accountService.Withdraw(loggedAccount, withdrawalAmount);
                 break;
-                
-
+        
             case 3:
                 Console.Write("\nDestination account number: ");
                 string destinationAccountNumber = Console.ReadLine()!;
@@ -380,14 +351,22 @@ public void SignIn()
                 break;
 
             case 5:
+                _investmentService.Invest(loggedAccount);
+                break;
+
+            case 6:
                 _authenticationService.ChangePin(loggedCustomer!);
                 Thread.Sleep(3000);
                 break;
 
-            case 6:
+            case 7:
                 Console.WriteLine("\nLeaving menu...");
                 Thread.Sleep(1300);
                 return;
+
+            default:
+                Console.WriteLine("\nInvalid option.");
+                break;
 
         }
         }
