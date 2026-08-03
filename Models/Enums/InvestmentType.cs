@@ -1,4 +1,4 @@
-namespace PrimeCapitalBank.Models;
+namespace PrimeCapitalBank.Models.Enums;
 public enum InvestmentType
 {
     TreasurySelic = 1,

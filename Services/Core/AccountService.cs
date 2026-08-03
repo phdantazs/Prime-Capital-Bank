@@ -1,7 +1,8 @@
 using PrimeCapitalBank.Models;
+using PrimeCapitalBank.Models.Enums;
 using System;
 
-namespace PrimeCapitalBank.Services;
+namespace PrimeCapitalBank.Services.Core;
 
 public class AccountService
 {

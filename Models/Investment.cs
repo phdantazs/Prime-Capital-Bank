@@ -1,3 +1,4 @@
+using PrimeCapitalBank.Models.Enums;
 namespace PrimeCapitalBank.Models;
 public class Investment
 {

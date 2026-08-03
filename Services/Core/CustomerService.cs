@@ -1,7 +1,7 @@
 using System.Linq;
 using PrimeCapitalBank.Models;
 
-namespace PrimeCapitalBank.Services;
+namespace PrimeCapitalBank.Services.Core;
 
 public class CustomerService
 {

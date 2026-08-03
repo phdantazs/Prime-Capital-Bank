@@ -1,5 +1,6 @@
 using PrimeCapitalBank.Models;
-namespace PrimeCapitalBank.Services;
+using PrimeCapitalBank.Models.Enums;
+namespace PrimeCapitalBank.Services.Investments;
 
 public class InvestmentService
 {
