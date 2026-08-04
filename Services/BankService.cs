@@ -20,7 +20,7 @@ public class BankService
 
         _inputService = new InputService();
         _authenticationService = new AuthenticationService(_inputService);
-        _investmentService = new InvestmentService();
+        _investmentService = new InvestmentService(_inputService);
         
     }
 public void Start()
@@ -41,13 +41,9 @@ while (true)
     
     Console.Write("\nChoose an option: ");
     
-    if (!int.TryParse(Console.ReadLine(), out int selectedOption))
-    {
-        Console.WriteLine("\nInvalid option.");
-        continue;
-    }
+    int option = _inputService.ReadMenuOption(1, 4);
 
-    switch (selectedOption)
+    switch (option)
     {
         case 1:
             CreateAccount();
@@ -122,12 +118,7 @@ public void CreateAccount()
 
     Console.Write("\nOption: ");
 
-    if (!int.TryParse(Console.ReadLine(), out int option))
-    {
-        Console.WriteLine("Invalid option.");
-        Thread.Sleep(2000);
-        return;
-    }
+    int option = _inputService.ReadMenuOption(1, 2);
 
     AccountType accountType;
     
@@ -285,13 +276,9 @@ public void SignIn()
 
             Console.Write("\nWhat you need?: ");
 
-        if(!int.TryParse(Console.ReadLine(), out int selectedOption))
-        {
-            Console.WriteLine("\nInvalid option.");
-            continue;
-        }
+        int option = _inputService.ReadMenuOption(1, 7);
 
-        switch (selectedOption)
+        switch (option)
         {
             case 1:
                 decimal amount = _inputService.ReadMoney("Enter the deposit amount: ");
@@ -350,7 +337,7 @@ public void SignIn()
                 break;
 
             case 5:
-                _investmentService.Invest(loggedAccount);
+                OpenInvestmentMenu(loggedAccount);
                 break;
 
             case 6:
@@ -370,6 +357,49 @@ public void SignIn()
         }
         }
 }
+
+private void OpenInvestmentMenu(BankAccount account)
+    {
+        while (true)
+        {
+            Console.Clear();
+
+            Console.WriteLine("========== INVESTMENTS ==========\n");
+            
+            Console.WriteLine("1 - Invest");
+            Console.WriteLine("2 - My Portfolio");
+            Console.WriteLine("3 - Redeem Investment");
+            Console.WriteLine("4 - Investment Simulator");
+            Console.WriteLine("5 - Back");
+
+            Console.Write("\nOption: ");
+
+            int option = _inputService.ReadMenuOption(1, 5);
+
+            switch (option)
+            {
+                case 1:
+                    _investmentService.Invest(account);
+                    break;
+                
+                case 2:
+                    _investmentService.ShowPortfolio(account);
+                    break;
+
+                case 3:
+                    _investmentService.Redeem(account);
+                    break;
+
+                case 4:
+                    _investmentService.SimulateInvestment(account);
+                    break;
+
+                case 5:
+                    return;
+            }
+        }
+    }
+
 }
 
 

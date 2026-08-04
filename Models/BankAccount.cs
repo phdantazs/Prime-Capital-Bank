@@ -1,3 +1,4 @@
+using PrimeCapitalBank.Models.Enums;
 namespace PrimeCapitalBank.Models;
 
 public class BankAccount
@@ -14,5 +15,4 @@ public class BankAccount
     public string Pin { get; set; } = string.Empty;
     public int FailedLoginAttempts { get; set; } = 0;
     public DateTime? BlockedUntil { get; set; }
-
 }

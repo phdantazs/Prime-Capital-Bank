@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 namespace PrimeCapitalBank.Models;
 public class Customer
 {

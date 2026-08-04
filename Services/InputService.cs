@@ -369,4 +369,21 @@ private string FormatWord(string word)
 
         return char.ToUpper(word[0]) + word[1..].ToLower();
     }
+
+    public int ReadMenuOption(int min, int max)
+    {
+        while (true)
+        {
+            string input = Console.ReadLine()!;
+
+            if (int.TryParse(input, out int option) && 
+                option >= min &&
+                option <= max)
+            {
+                return option;
+            }
+
+            Console.Write($"Invalid option. Choose a number between {min} and {max}: ");
+        }
+    }
 }
