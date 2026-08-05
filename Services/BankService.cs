@@ -281,12 +281,12 @@ public void SignIn()
         switch (option)
         {
             case 1:
-                decimal amount = _inputService.ReadMoney("Enter the deposit amount: ");
+                decimal amount = _inputService.ReadMoney("\nEnter the deposit amount: ");
                 _accountService.Deposit(loggedAccount, amount);
                 break;
             
             case 2:
-                decimal withdrawalAmount = _inputService.ReadMoney("Withdrawal amount: ");
+                decimal withdrawalAmount = _inputService.ReadMoney("\nWithdrawal amount: ");
                 _accountService.Withdraw(loggedAccount, withdrawalAmount);
                 break;
         

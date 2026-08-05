@@ -180,7 +180,7 @@ public class InvestmentService
         InvestmentType investmentType = SelectInvestmentType();
 
         decimal annualRate = GetAnnualRate(investmentType);
-        decimal amount = _inputService.ReadMoney("Initial investment amount: ");
+        decimal amount = _inputService.ReadMoney("\nInitial investment amount: ");
 
         if (amount <= 0)
         {
@@ -189,7 +189,7 @@ public class InvestmentService
             return;
         }
 
-        Console.WriteLine("\nInvestment period (years): ");
+        Console.Write("\nInvestment period (years): ");
         int years = int.Parse(Console.ReadLine()!);
 
         if (years <= 0)
@@ -207,11 +207,11 @@ public class InvestmentService
         decimal profit = finalValue - amount;
 
         Console.WriteLine("\n========== SIMULATION RESULT ==========");
-        Console.WriteLine($"Investment: {investmentType}");
+        Console.WriteLine($"\nInvestment: {investmentType}");
         Console.WriteLine($"Inital amount: R$ {amount:C}");
         Console.WriteLine($"Period: {years} years");
-        Console.WriteLine($"Annual rate: R$ {annualRate:P2}");
-        Console.WriteLine($"Final value: R$ {finalValue:C}");
+        Console.WriteLine($"Annual rate: {annualRate:P2}");
+        Console.WriteLine($"Final value: {finalValue:C}");
         Console.WriteLine($"Profit: {profit:C}");
 
         Console.WriteLine("\nPress any key to continue...");
@@ -221,7 +221,7 @@ public class InvestmentService
     {
         Console.Clear();
 
-        Console.WriteLine("========== INVESTMENTS ==========");
+        Console.WriteLine("========== INVESTMENTS ==========\n");
         Console.WriteLine("Choose an investment type:\n");
 
         Console.WriteLine("1 - Treasury Selic");
