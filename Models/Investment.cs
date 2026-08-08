@@ -5,6 +5,8 @@ public class Investment
 {
     public InvestmentType Type { get; set; }
     public decimal InvestmentAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public decimal CurrentValue { get; set; }
     public decimal AnnualRate { get; set; }
     public DateTime InvestedAt { get; set; }
     public Guid Id { get; set; } = Guid.NewGuid();

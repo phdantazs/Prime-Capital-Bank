@@ -6,9 +6,13 @@ namespace PrimeCapitalBank.Services.Investments;
 public class IncomeTaxService
 {
     private readonly InvestmentService _investmentService;
-    public IncomeTaxService(InvestmentService investmentService)
+    private readonly TaxService _taxService;
+    public IncomeTaxService(
+        InvestmentService investmentService,
+        TaxService taxService)
     {
         _investmentService = investmentService;
+        _taxService = taxService;
     }
     public void Calculate(BankAccount account)
     {
@@ -31,8 +35,11 @@ public class IncomeTaxService
         decimal currentValue = _investmentService.CalculateCurrentValue(investment);
         decimal profit = currentValue - investment.InvestmentAmount;
         
-        decimal taxRate = GetTaxRate(investment);
-        decimal tax = profit > 0 ? profit * taxRate : 0;
+        decimal taxRate = _taxService.GetTaxRate(investment);
+        decimal tax = 
+            _taxService.CalculateIncomeTax(
+                profit,
+                investment);
 
         decimal netValue = currentValue - tax;
 
@@ -56,26 +63,4 @@ public class IncomeTaxService
         Console.WriteLine("\nPress any key to continue...");
         Console.ReadKey();
     }
-    private decimal GetTaxRate(Investment investment)
-    {
-        //LCI e LCA são isentas de IR para pessoa física
-        if (investment.Type == InvestmentType.LCI ||
-            investment.Type == InvestmentType.LCA)
-        {
-        return 0m;
-        }
-
-        int days = (DateTime.Now - investment.InvestedAt).Days;
-        //Valores com base na tabela regressiva de IR para renda fixa
-        if (days <= 180)
-            return 0.225m;
-
-        if (days <= 360)
-            return 0.20m;
-
-        if (days <= 720)
-            return 0.175m;
-
-        return 0.15m;
-    }    
 }

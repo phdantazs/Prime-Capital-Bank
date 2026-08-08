@@ -20,7 +20,7 @@ public class BankService
 
         _inputService = new InputService();
         _authenticationService = new AuthenticationService(_inputService);
-        _investmentService = new InvestmentService(_inputService);
+        _investmentService = new InvestmentService(_inputService, new TaxService());
         
     }
 public void Start()

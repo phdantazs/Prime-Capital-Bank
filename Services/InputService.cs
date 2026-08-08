@@ -374,16 +374,20 @@ private string FormatWord(string word)
     {
         while (true)
         {
-            string input = Console.ReadLine()!;
+            ConsoleKeyInfo key = Console.ReadKey(true);
 
-            if (int.TryParse(input, out int option) && 
-                option >= min &&
-                option <= max)
+            if (key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9)
             {
-                return option;
+                int option = key.Key - ConsoleKey.D0;
+
+                if (option >= min && option <= max)
+                {
+                    Console.WriteLine(option);
+                    return option;
+                }
             }
 
-            Console.Write($"Invalid option. Choose a number between {min} and {max}: ");
+            Console.Write($"\nInvalid option. Choose a number between {min} and {max}: ");
         }
     }
 }

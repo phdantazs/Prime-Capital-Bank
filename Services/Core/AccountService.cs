@@ -1,6 +1,7 @@
 using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Models.Enums;
 using System;
+using System.Linq;
 
 namespace PrimeCapitalBank.Services.Core;
 
@@ -143,12 +144,14 @@ public void Statement(BankAccount account)
         Console.WriteLine("    ACCOUNT STATEMENT");
         Console.WriteLine("=========================");
 
-    Console.WriteLine($"Account Number : {account.AccountNumber}");
-    Console.WriteLine($"Account Type   : {account.AccountType}");
-    Console.WriteLine($"Created At     : {account.CreatedAt:dd/MM/yyyy HH:mm}");
+    Console.WriteLine($"\nAccount Number: {account.AccountNumber}");
+    Console.WriteLine($"Account Type: {account.AccountType}");
+    Console.WriteLine($"Created At: {account.CreatedAt:dd/MM/yyyy HH:mm}");
     Console.WriteLine($"Current Balance: R$ {account.Balance:N2}");
 
-    Console.WriteLine("\nTransactions");
+    Console.WriteLine("\n----------------------------------------------");
+
+    Console.WriteLine("\nTransactions:\n");
 
     if (account.Transactions.Count == 0)
     {
@@ -162,12 +165,16 @@ public void Statement(BankAccount account)
 
             Console.WriteLine(
                 $"{transaction.Date:dd/MM/yyyy HH:mm} | " +
-                $"{signal} R$ {transaction.Amount,10:N2} | " +
-                $"{transaction.Description}");
+                $"{transaction.Description, -45} | " + 
+                $"{signal} R$ {transaction.Amount,15:N2} | " +
+                $"{transaction.TransactionId}");
         }
     }
 
-    Console.WriteLine("\n------------------------------------------------------------");
+    Console.WriteLine("\n==============================");
+    Console.WriteLine($"\nCurrent Balance: R$ {account.Balance:N2}");
+    Console.WriteLine("\n==============================");
+
     Console.WriteLine("\nPress any key to return...");
     Console.ReadKey();
 }
