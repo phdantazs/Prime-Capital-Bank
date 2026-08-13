@@ -10,6 +10,7 @@ public class BankAccount
     public List<Transaction> Transactions { get; set; } = new();
     public Customer Owner { get; set;} = null!;
     public List<Investment> Investments { get; set; } = new();
+    public BitcoinWallet? BitcoinWallet { get; set;}
 
     // Segurança da conta
     public string Pin { get; set; } = string.Empty;

@@ -2,6 +2,8 @@ using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Models.Enums;
 using PrimeCapitalBank.Services.Core;
 using PrimeCapitalBank.Services.Investments;
+using PrimeCapitalBank.Services.Bitcoin;
+using System.Globalization;
 
 namespace PrimeCapitalBank.Services;
 
@@ -13,6 +15,7 @@ public class BankService
     private readonly AuthenticationService _authenticationService;
     private readonly InvestmentService _investmentService;
     private readonly InputService _inputService;
+    private readonly BitcoinService _bitcoinService;
     public BankService()
     {
         _customerService = new CustomerService(customers);
@@ -21,6 +24,7 @@ public class BankService
         _inputService = new InputService();
         _authenticationService = new AuthenticationService(_inputService);
         _investmentService = new InvestmentService(_inputService, new TaxService());
+        _bitcoinService = new BitcoinService(_inputService);
         
     }
 public void Start()
@@ -76,23 +80,31 @@ public void CreateAccount()
     Console.Clear();
     Console.WriteLine("\n========== OPEN AN ACCOUNT ==========\n");
 
-    Console.Write("\nPlease enter your full name: ");
+    Console.Write("Please enter your full name: ");
     string fullName = _inputService.ReadFullName();
+    Console.WriteLine();
 
-    Console.Write("\nWhat's your date of birth (dd/MM/yyyy): ");
+    Console.Write("What's your date of birth (dd/MM/yyyy): ");
     DateTime birthDate = _inputService.ReadBirthDate();
+    Console.WriteLine();
 
-    Console.Write("\nID Number: ");
+    Console.Write("ID Number: ");
     string idNumber = _inputService.ReadIdNumber();
+    Console.WriteLine();
 
-    decimal monthlyIncome = _inputService.ReadMoney("\nApproximate monthly income: ");
+    decimal monthlyIncome = _inputService.ReadMoney("Approximate monthly income: ");
+    Console.WriteLine();
+
+    Console.WriteLine("Create a 6-digit PIN: ");
+    string pin = _inputService.ReadPin();
+    Console.WriteLine();
+
+    Console.WriteLine("Confirm your PIN: ");
+    string confirmPin = _inputService.ReadPin();
 
     Customer? customer = _customerService.FindCustomerById(idNumber);
 
-// Se o cliente ainda não existir, cria um novo
-
-    string pin = string.Empty;
-
+    // Se o cliente ainda não existir, cria um novo
     if (customer == null)
     {
         pin = _authenticationService.CreatePin();
@@ -253,30 +265,30 @@ public void SignIn()
 
     Console.Clear();
 
-    Console.WriteLine("==========================================");
+    Console.WriteLine("===================================");
     Console.WriteLine($"\nWelcome back, {loggedCustomer.Name}!\n");
-    Console.WriteLine("==========================================\n");
-    Console.WriteLine();
+    Console.WriteLine("===================================\n");
 
     Console.WriteLine($"Member since : {loggedAccount.CreatedAt.Year}");
     Console.WriteLine($"Account Type : {_accountService.GetAccountType(loggedAccount.AccountType)}");
     Console.WriteLine($"Account No.  : {loggedAccount.AccountNumber}");
-    Console.WriteLine($"Balance      : ${loggedAccount.Balance:N2}");
+    Console.WriteLine($"Balance      : ${loggedAccount.Balance:N2}\n");
 
     while (true)
         {
-            Console.WriteLine("\n========== ACCOUNT MENU ==========");
+            Console.WriteLine("========== ACCOUNT MENU ==========");
             Console.WriteLine("\n1 - Deposit");
             Console.WriteLine("\n2 - Withdraw");
             Console.WriteLine("\n3 - Transfer");
             Console.WriteLine("\n4 - Statement");
             Console.WriteLine("\n5 - Investments");
-            Console.WriteLine("\n6 - Change PIN");
-            Console.WriteLine("\n7 - Logout\n");
+            Console.WriteLine("\n6 - Bitcoin");
+            Console.WriteLine("\n7 - Change PIN");
+            Console.WriteLine("\n8 - Logout\n");
 
             Console.Write("\nWhat you need?: ");
 
-        int option = _inputService.ReadMenuOption(1, 7);
+        int option = _inputService.ReadMenuOption(1, 8);
 
         switch (option)
         {
@@ -341,11 +353,15 @@ public void SignIn()
                 break;
 
             case 6:
+                OpenBitcoinMenu(loggedAccount);
+                break;
+
+            case 7:
                 _authenticationService.ChangePin(loggedCustomer!);
                 Thread.Sleep(3000);
                 break;
 
-            case 7:
+            case 8: 
                 Console.WriteLine("\nLeaving menu...");
                 Thread.Sleep(1300);
                 return;
@@ -400,12 +416,88 @@ private void OpenInvestmentMenu(BankAccount account)
         }
     }
 
+    private void OpenBitcoinMenu(BankAccount account)
+    {
+        while (true)
+        {
+            Console.Clear();
+
+            Console.WriteLine("========== BITCOIN ==========\n");
+
+            if (account.BitcoinWallet == null)
+            {
+                Console.WriteLine("1 - Open Bitcoin Account");
+                Console.WriteLine("2 - Back");
+
+                Console.Write("\nOption: ");
+
+                int option = _inputService.ReadMenuOption(1, 2);
+
+                switch (option)
+                {
+                    case 1:
+                        _bitcoinService.OpenBitcoinAccount(account);
+                        Thread.Sleep(3000);
+                        break;
+
+                    case 2:
+                        return;
+                }
+            }
+            else
+            {
+                Console.Clear();
+
+                Console.WriteLine("Your Bitcoin account is active!\n");
+                Console.WriteLine($"Bitcoin balance: {account.BitcoinWallet.Balance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
+
+                Console.WriteLine("\n1 - Buy Bitcoin");
+                Console.WriteLine("2 - Sell Bitcoin");
+                Console.WriteLine("3 - My Wallet");
+                Console.WriteLine("4 - Bitcoin Price");
+                Console.WriteLine("5 - Bitcoin Transactions");
+                Console.WriteLine("6 - Close Bitcoin Account");
+                Console.WriteLine("7 - Back");
+
+                Console.WriteLine("\nOption: ");
+
+                int option = _inputService.ReadMenuOption(1, 7);
+
+                switch (option)
+                {
+                    case 1:
+                        _bitcoinService.BuyBitcoin(account);
+                        break;
+
+                    case 2:
+                        Console.WriteLine("\nSell Bitcoin - Coming soon.");
+                        Thread.Sleep(2000);
+                        break;
+
+                    case 3:
+                        Console.WriteLine("\nMy Wallet - Coming soon.");
+                        Thread.Sleep(2000);
+                        break;
+                    
+                    case 4:
+                        Console.WriteLine("\nBitcoin Price - Coming soon.");
+                        Thread.Sleep(2000);
+                        break;
+
+                    case 5:
+                        Console.WriteLine("\nBitcoin Transactions - Coming soon.");
+                        Thread.Sleep(2000);
+                        break;
+
+                    case 6:
+                        Console.WriteLine("\nClose Bitcoin Account - Coming soon.");
+                        Thread.Sleep(2000);
+                        break;
+
+                    case 7:
+                        return;
+                }
+            }
+        }
+    }
 }
-
-
-
-
-
-
-    
-    
