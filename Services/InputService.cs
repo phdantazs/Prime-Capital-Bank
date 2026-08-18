@@ -218,21 +218,45 @@ public class InputService
 
     public string ReadFullName()
     {
+        string fullName = "";
+
         while (true)
         {
-            string? fullName = Console.ReadLine()?.Trim();
+            ConsoleKeyInfo key = Console.ReadKey(true);
 
-            if (string.IsNullOrWhiteSpace(fullName))
+            if (key.Key == ConsoleKey.Enter)
             {
-                Console.Write("Please enter your full name: ");
+                if (string.IsNullOrWhiteSpace(fullName))
+                    continue;
+
+                if (!IsValidFullName(fullName))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Invalid name. Please enter only letters: ");
+                    fullName = "";
+                    continue;
+                }
+
+                Console.WriteLine();
+                return FormatFullName(fullName);
+            }
+
+            if (key.Key == ConsoleKey.Backspace)
+            {
+                if (fullName.Length > 0)
+                {
+                    fullName = fullName[..^1];
+                    Console.Write("\b \b");
+                }
+
                 continue;
             }
-            if (!IsValidFullName(fullName))
-            {
-                Console.Write("Invalid name. Please enter only letters: ");
+
+            if (char.IsControl(key.KeyChar))
                 continue;
-            }
-            return FormatFullName(fullName);
+
+            fullName += key.KeyChar;
+            Console.Write(key.KeyChar);
         }
     }
 
