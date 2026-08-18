@@ -95,14 +95,9 @@ public void CreateAccount()
     decimal monthlyIncome = _inputService.ReadMoney("Approximate monthly income: ");
     Console.WriteLine();
 
-    Console.WriteLine("Create a 6-digit PIN: ");
-    string pin = _inputService.ReadPin();
-    Console.WriteLine();
-
-    Console.WriteLine("Confirm your PIN: ");
-    string confirmPin = _inputService.ReadPin();
-
     Customer? customer = _customerService.FindCustomerById(idNumber);
+
+    string pin;
 
     // Se o cliente ainda não existir, cria um novo
     if (customer == null)
@@ -167,7 +162,7 @@ public void CreateAccount()
     Console.Clear();
 
     Console.WriteLine("======================================");
-    Console.WriteLine("Account created successfully!");
+    Console.WriteLine("    Account created successfully!");
     Console.WriteLine("======================================\n");
     Console.WriteLine($"Customer Name : {customer.Name}");
     Console.WriteLine($"Account Number: {account.AccountNumber}");
@@ -200,15 +195,14 @@ public void ShowRegisteredAccounts()
 
                 foreach (BankAccount account in customer.Accounts)
             {
-                Console.WriteLine("\n==================================================\n");
-                Console.WriteLine("\nAccounts:\n ");
-                Console.WriteLine($"Account Type: {_accountService.GetAccountType(account.AccountType)}");
+                Console.WriteLine("----------------------------------------------\n");
+                Console.WriteLine("Accounts:");
+                Console.WriteLine($"\nAccount Type: {_accountService.GetAccountType(account.AccountType)}");
                 Console.WriteLine($"Account Number: {account.AccountNumber}");
                 Console.WriteLine($"Balance: R${account.Balance:N2}");
                 Console.WriteLine($"Created At: {account.CreatedAt:dd/MM/yyyy}");
             }
 
-            Console.WriteLine("\n==================================================\n");
             }
              Console.WriteLine("Press any key to return...");
              Console.ReadKey();
@@ -251,7 +245,7 @@ public void SignIn()
 
     if (loggedCustomer == null || loggedAccount == null)
     {
-        Console.WriteLine("\nInvalid credentials.");
+        Console.WriteLine("Invalid credentials.");
         Thread.Sleep(3000);
         return;
     }
@@ -261,8 +255,7 @@ public void SignIn()
             Thread.Sleep(3000);
             return;
         }
-            
-
+    
     Console.Clear();
 
     Console.WriteLine("===================================");
@@ -364,6 +357,7 @@ public void SignIn()
             case 8: 
                 Console.WriteLine("\nLeaving menu...");
                 Thread.Sleep(1300);
+                Console.Clear();
                 return;
 
             default:
@@ -470,31 +464,27 @@ private void OpenInvestmentMenu(BankAccount account)
                         break;
 
                     case 2:
-                        Console.WriteLine("\nSell Bitcoin - Coming soon.");
-                        Thread.Sleep(2000);
+                        _bitcoinService.SellBitcoin(account);
                         break;
 
                     case 3:
-                        Console.WriteLine("\nMy Wallet - Coming soon.");
-                        Thread.Sleep(2000);
+                        _bitcoinService.ShowBitcoinWallet(account);
                         break;
                     
                     case 4:
-                        Console.WriteLine("\nBitcoin Price - Coming soon.");
-                        Thread.Sleep(2000);
+                        _bitcoinService.ShowBitcoinPrice();
                         break;
 
                     case 5:
-                        Console.WriteLine("\nBitcoin Transactions - Coming soon.");
-                        Thread.Sleep(2000);
+                        _bitcoinService.ShowBitcoinTransactions(account);
                         break;
 
                     case 6:
-                        Console.WriteLine("\nClose Bitcoin Account - Coming soon.");
-                        Thread.Sleep(2000);
+                        _bitcoinService.CloseBitcoinAccount(account);
                         break;
 
                     case 7:
+                        Console.Clear();
                         return;
                 }
             }

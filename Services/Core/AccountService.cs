@@ -57,8 +57,8 @@ public void Deposit(BankAccount account, decimal amount)
         Console.WriteLine($"\nYour actual balance is: R$ {account.Balance:N2}");
 
         Thread.Sleep(2000);
-
-        }
+        Console.Clear();
+    }
 
 public void Withdraw(BankAccount account, decimal amount)
     {
@@ -93,6 +93,7 @@ public void Withdraw(BankAccount account, decimal amount)
     Console.WriteLine($"\nCurrent Balance: R$ {account.Balance:N2}");
 
     Thread.Sleep(2500);
+    Console.Clear();
 }
 
 public void Transfer(BankAccount originAccount, BankAccount destinationAccount, decimal amount)
@@ -134,6 +135,7 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
         Console.WriteLine($"\nCurrent balance: R$ {originAccount.Balance:N2}");
 
         Thread.Sleep(2500);
+        Console.Clear();
     }
 
 public void Statement(BankAccount account)
@@ -149,8 +151,7 @@ public void Statement(BankAccount account)
     Console.WriteLine($"Created At: {account.CreatedAt:dd/MM/yyyy HH:mm}");
     Console.WriteLine($"Current Balance: R$ {account.Balance:N2}");
 
-    Console.WriteLine("\n----------------------------------------------");
-
+    Console.WriteLine("\n-------------------------------------------------------");
     Console.WriteLine("\nTransactions:\n");
 
     if (account.Transactions.Count == 0)
@@ -171,14 +172,10 @@ public void Statement(BankAccount account)
         }
     }
 
-    Console.WriteLine("\n==============================");
-    Console.WriteLine($"\nCurrent Balance: R$ {account.Balance:N2}");
-    Console.WriteLine("\n==============================");
-
     Console.WriteLine("\nPress any key to return...");
     Console.ReadKey();
-}
-
+    Console.Clear();
+    }
 }
 
 

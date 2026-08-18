@@ -199,8 +199,6 @@ public class InvestmentService
             return;
         }
 
-        DateTime transactionDate = DateTime.Now;
-
         account.Balance += netRedemption;
 
         Transaction redemptionTransaction = new Transaction
@@ -208,25 +206,11 @@ public class InvestmentService
             Date = DateTime.Now,
             Type = "Investment Redemption",
             Amount = netRedemption,
-            Description = $"Investment Redemption of {selectedInvestment.Type}",
+            Description = $"Investment Redemption of {selectedInvestment.Type} (Taxes already deducted).",
             IsCredit = true
         };
 
         account.Transactions.Add(redemptionTransaction);
-
-        if (incomeTax > 0)
-        {
-            account.Transactions.Add(new Transaction
-            {
-                Date = transactionDate,
-                Type = "Income Tax",
-                Amount = incomeTax,
-                Description = $"Income Tax on {selectedInvestment.Type} Redemption",
-                IsCredit = false,
-                RelatedTransactionId = redemptionTransaction.TransactionId
-            });
-            
-        }
 
         selectedInvestment.CurrentValue -= redemptionValue;
         selectedInvestment.RemainingAmount -= redeemedPrincipal;
@@ -436,6 +420,16 @@ public class InvestmentService
         int totalMonths = result.Years * 12;
         decimal monthlyRate = result.AnnualRate / 12;
 
+        //Armazena todo aporte e o mês que o aporte entrou na simulação do investimento.
+        List<(decimal Amount, int MonthInvested)> contributions = new();
+
+        if (result.InitialInvestment > 0)
+        {
+            contributions.Add(
+                (result.InitialInvestment, 0)
+            );
+        }
+
         for (int month = 1; month <= totalMonths; month++)
         {
             balance *= (1 + monthlyRate);
@@ -450,18 +444,82 @@ public class InvestmentService
                     _ => false
                 };
 
-                if (shouldContribute)
+            if (shouldContribute && result.ContributionAmount > 0)
             {
                 balance += result.ContributionAmount;
                 totalContributed += result.ContributionAmount;
+
+                contributions.Add(
+                    (result.ContributionAmount, month)
+                );
             }
         }
 
+        decimal grossProfit = balance - totalContributed;
+
+        decimal incomeTax = 0m;
+
+        //LCI e LCA são isentos de IR
+        if (result.InvestmentType != InvestmentType.LCI && result.InvestmentType != InvestmentType.LCA)
+        {
+            foreach (var contribution in contributions)
+            {
+                int monthsInvested = totalMonths - contribution.MonthInvested;
+
+                int daysInvested = monthsInvested * 30;
+
+                decimal contributionFutureValue =
+                    contribution.Amount *
+                    CalculateCompoundGrowth(monthlyRate, monthsInvested);
+
+                decimal contribuitonProfit = contributionFutureValue - contribution.Amount;
+
+                if (contribuitonProfit <= 0)
+                    continue;
+
+                decimal taxRate;
+
+                if (daysInvested <= 180)
+                {
+                    taxRate = 0.225m;
+                }
+                else if (daysInvested <= 360)
+                {
+                    taxRate = 0.20m;
+                }
+                else if (daysInvested <= 720)
+                {
+                    taxRate = 0.175m;
+                }
+                else
+                {
+                    taxRate = 0.15m;
+                }
+
+                incomeTax += contribuitonProfit * taxRate;
+            }
+        }
+
+        decimal netProfit = grossProfit - incomeTax;
+        decimal finalBalance = totalContributed + netProfit;
+
         result.TotalContributed = Math.Round(totalContributed, 2);
-        result.FinalBalance = Math.Round(balance, 2);
-        result.InterestEarned = Math.Round(balance - totalContributed, 2);
+        result.FinalBalance = Math.Round(finalBalance, 2);
+        result.InterestEarned = Math.Round(netProfit, 2);
 
         return result;
+    }
+
+    private decimal CalculateCompoundGrowth(
+        decimal monthlyRate,
+        int months)
+    {
+        if (months <= 0)
+            return 1m;
+
+        return (decimal)Math.Pow(
+            (double)(1 + monthlyRate),
+            months);
     }
 
     private void DisplaySimulation(SimulationResult result)
@@ -480,7 +538,7 @@ public class InvestmentService
 
         Console.WriteLine();
 
-        Console.WriteLine("========== INVESTMENT PROFILE ==========\n");
+        Console.WriteLine("============ INVESTMENT PROFILE ============\n");
 
         Console.WriteLine($"Risk Level: {info.RiskLevel}");
         Console.WriteLine($"Liquidity: {info.Liquidity}");
@@ -500,7 +558,7 @@ public class InvestmentService
 
         Console.WriteLine();
 
-        Console.WriteLine("========== RESULTS ==========\n");
+        Console.WriteLine("=============== RESULTS ===============\n");
         Console.WriteLine($"Total contributed: {result.TotalContributed:C}");
         Console.WriteLine($"Interest earned: {result.InterestEarned:C}");
         Console.WriteLine($"Final balance: {result.FinalBalance:C}");
@@ -595,13 +653,26 @@ public class InvestmentService
         Console.WriteLine();
 
         Console.WriteLine("========== INVESTMENT COMPARISON ==========\n");
-        Console.WriteLine(
-            $"{"Rank", -8}" +
-            $"{"Investment", -25}" +
-            $"{"Final Balance", -20}" +
-            $"{"Profit", -20}");
 
-        Console.WriteLine(new string('-', 75));
+        const int rankWidth = 8;
+        const int investmentWidth = 25;
+        const int balanceWidth = 20;
+        const int profitWidth = 20;
+
+        Console.WriteLine(
+            $"{"Rank", -rankWidth}" +
+            $"{"Investment", -investmentWidth}" +
+            $"{"Final Balance", -balanceWidth}" +
+            $"{"Profit", -profitWidth}"
+        );
+
+        int tableWidth =
+            rankWidth +
+            investmentWidth +
+            balanceWidth +
+            profitWidth;
+            
+        Console.WriteLine(new string('-', tableWidth));
 
         int position = 1;
 
@@ -615,13 +686,17 @@ public class InvestmentService
                 _ => $"{position}º" 
             };
 
-            Console.WriteLine(
-                $"{medal, -8}" +
-                $"{result.InvestmentType, -25}" +
-                $"{result.FinalBalance, -20:C}" +
-                $"{result.InterestEarned, -20:C}");
+            string finalBalance = result.FinalBalance.ToString("C");
+            string profit = result.InterestEarned.ToString("C");
 
-                position++;
+            Console.WriteLine(
+                $"{medal, -rankWidth}" +
+                $"{result.InvestmentType, -investmentWidth}" +
+                $"{finalBalance, -balanceWidth}" +
+                $"{profit, -profitWidth}"
+            );
+            
+            position++;
         }
     }
 
@@ -650,24 +725,59 @@ public class InvestmentService
         SimulationResult investment,
         InvestorProfile profile)
     {
-        return profile switch
+        return (profile, investment.InvestmentType) switch
         {
-            InvestorProfile.EmergencyLiquidity =>
-                investment.InvestmentType == InvestmentType.TreasurySelic
-                    ? "This investment was selected because it offers daily liquidity with very low risk, making it suitable for emergency reserves."
-                    : "This option offers a good balance between liquidity and profitability.",
+            //Liquidez diária
+            (InvestorProfile.EmergencyLiquidity, InvestmentType.TreasurySelic) =>
+                "Treasury Selic was recommended because it offers daily liquidity and very low risk, making it suitable for an emergency reserve.",
 
-            InvestorProfile.Conservative =>
-                "This investment was selected because it prioritizes security and stability while still providing consistent returns.",
+            //Conservador
+            (InvestorProfile.Conservative, InvestmentType.TreasurySelic) =>
+                "Treasury Selic was recommended because it combines very low risk, daily liquidity and the security of being issued by the Federal Government.",
 
-            InvestorProfile.Balanced =>
-                "This investment was selected because it provides a balance between profitability, risk, and investment conditions.",
+            (InvestorProfile.Conservative, InvestmentType.CDB) =>
+                "CDB was recommended because it offers low risk, FGC protection and competitive returns while maintaining a conservative risk profile.",
+            
+            (InvestorProfile.Conservative, InvestmentType.LCI) =>
+                "LCI was recommended because it offers low risk, FGC protection and tax-exempt returns, making it suitable for a conservative investor.",
 
-            InvestorProfile.MaximumReturn =>
-                "This investment was selected because it presented the highest projected return for the selected period. But be careful this is the highest risk investment also.",
+            (InvestorProfile.Conservative, InvestmentType.LCA) =>
+                "LCA was recommended because it offers low risk, FGC protection and tax-exempt returns, making it suitable for a conservative investor.",
+
+            //Equilibrado
+            (InvestorProfile.Balanced, InvestmentType.TreasurySelic) =>
+                "Treasury Selic was recommended because it provides a strong combination of security, liquidity and predictable returns for a balanced investor.",
+
+            (InvestorProfile.Balanced, InvestmentType.CDB) =>
+                "CDB was recommended because it provides a balance between profitability, relatively low risk and FGC protection.",
+
+            (InvestorProfile.Balanced, InvestmentType.LCI) =>
+                "LCI was recommended because it combines low risk, FGC protection and tax-exempt returns, providing a balanced investment option.",
+
+            (InvestorProfile.Balanced, InvestmentType.LCA) =>
+                "LCA was recommended because it combines low risk, FGC protection and tax-exempt returns, providing a balanced investment option.",
+
+            (InvestorProfile.Balanced, InvestmentType.FixedIncomeFund) =>
+                "The Fixed Income Fund was recommended because it provides diversification and the potential for competitive returns with a low to moderate level of risk.",
+
+            // Máximo retorno
+            (InvestorProfile.MaximumReturn, InvestmentType.TreasurySelic) =>
+                "Treasury Selic was recommended because it achieved the highest projected net return in this simulation while maintaining very low risk.",
+
+            (InvestorProfile.MaximumReturn, InvestmentType.CDB) =>
+                "CDB was recommended because it achieved the highest projected net return in this simulation while still offering FGC protection.",
+
+            (InvestorProfile.MaximumReturn, InvestmentType.LCI) =>
+                "LCI was recommended because it achieved the highest projected net return in this simulation while offering tax-exempt returns and FGC protection.",
+
+            (InvestorProfile.MaximumReturn, InvestmentType.LCA) =>
+                "LCA was recommended because it achieved the highest projected net return in this simulation while offering tax-exempt returns and FGC protection.",
+
+            (InvestorProfile.MaximumReturn, InvestmentType.FixedIncomeFund) =>
+                "The Fixed Income Fund was recommended because it achieved the highest projected net return in this simulation. However, its risk level is higher than the most conservative alternatives.",
 
             _ =>
-                "This investment was selected based on the simulation results."
+                "This investment was recommended based on the simulation results and your investor profile."
         };
     }
 
@@ -676,7 +786,30 @@ public class InvestmentService
         SimulationResult selectedInvestment,
         InvestorProfile profile)
     {
-        SimulationResult bestInvestment = results.First();
+        SimulationResult bestInvestment = profile switch
+        {
+            InvestorProfile.EmergencyLiquidity =>
+                results.First(r => r.InvestmentType == InvestmentType.TreasurySelic),
+
+            InvestorProfile.Conservative =>
+                results
+                    .Where(r =>
+                        r.InvestmentType == InvestmentType.TreasurySelic ||
+                        r.InvestmentType == InvestmentType.CDB ||
+                        r.InvestmentType == InvestmentType.LCI ||
+                        r.InvestmentType == InvestmentType.LCA)
+                    .OrderByDescending(r => r.FinalBalance)
+                    .First(),
+
+            InvestorProfile.Balanced =>
+                results.First(),
+
+            InvestorProfile.MaximumReturn =>
+                results.First(),
+
+            _ =>
+                results.First()
+        };
 
         string reason = GetRecommendationReason(
         bestInvestment,
@@ -690,7 +823,7 @@ public class InvestmentService
 
         Console.WriteLine("Why this investment:");
 
-        Console.WriteLine(reason);
+        Console.WriteLine($"\n{reason}");
         Console.WriteLine();
 
         Console.WriteLine($"Projected final balance: {bestInvestment.FinalBalance:C}");
@@ -703,7 +836,13 @@ public class InvestmentService
         {
             Console.WriteLine();
             Console.WriteLine(
-                $"Difference compared to your selected investment: +{difference:C}");
+                $"Difference compared to your selected investment: + {difference:C}");
+        }
+        else if (difference < 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine(
+                $"Difference compared to your selected investment: - {Math.Abs(difference):C}");  
         }
         else
         {

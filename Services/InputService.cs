@@ -374,20 +374,37 @@ private string FormatWord(string word)
     {
         while (true)
         {
-            ConsoleKeyInfo key = Console.ReadKey(true);
+            string input = Console.ReadLine()?.Trim() ?? "";
 
-            if (key.Key >= ConsoleKey.D0 && key.Key <= ConsoleKey.D9)
+            if (int.TryParse(input, out int option) &&
+                option >= min &&
+                option <= max)
             {
-                int option = key.Key - ConsoleKey.D0;
-
-                if (option >= min && option <= max)
-                {
-                    Console.WriteLine(option);
-                    return option;
-                }
+                return option;
             }
 
             Console.Write($"\nInvalid option. Choose a number between {min} and {max}: ");
+        }
+    }
+
+    public decimal ReadBitcoinAmount(string prompt)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+
+            string? input = Console.ReadLine();
+
+            if (decimal.TryParse(
+                input,
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out decimal value))
+            {
+                return value;
+            }
+
+            Console.WriteLine("\nInvalid Bitcoin amount. Please try again.");
         }
     }
 }

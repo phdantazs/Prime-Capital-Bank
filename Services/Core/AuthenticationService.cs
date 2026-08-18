@@ -12,7 +12,7 @@ public class AuthenticationService
     {
         while (true)
         {
-            Console.WriteLine("\nCreate a 6-digit PIN: ");
+            Console.WriteLine("Create a 6-digit PIN: ");
             string pin = _inputService.ReadPin();
 
             if (currentPin != null && pin == currentPin)
