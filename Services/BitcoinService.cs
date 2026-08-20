@@ -300,7 +300,7 @@ public class BitcoinService
                     .OrderByDescending(transaction => transaction.CreatedAt))
         {
             Console.WriteLine($"Type: {transaction.Type}");
-            Console.WriteLine($"BTC Amount: {transaction.BitcoinAmount.ToString("G29", CultureInfo.InvariantCulture)} BTC");
+            Console.WriteLine($"BTC Amount: {transaction.BitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC");
             Console.WriteLine($"Bitcoin Price: R$ {transaction.BitcoinPrice:N2}");
             Console.WriteLine($"Total Amount: R$ {transaction.TotalAmount:N2}");
             Console.WriteLine($"Date: {transaction.CreatedAt:dd/MM/yyyy HH:mm:ss}");
