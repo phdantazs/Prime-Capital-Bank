@@ -78,8 +78,10 @@ public class AuthenticationService
 
     public void ChangePin(Customer customer)
     {
-        Console.Write("\nEnter your current PIN: ");
+        Console.Write("Enter your current PIN: ");
         string currentPin = _inputService.ReadPin();
+
+        Console.WriteLine();
 
         if (customer.Accounts.First().Pin != currentPin)
         {

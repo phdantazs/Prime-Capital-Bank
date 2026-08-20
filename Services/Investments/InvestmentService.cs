@@ -34,6 +34,8 @@ public class InvestmentService
     {
         InvestmentType investmentType = SelectInvestmentType();
         decimal annualRate = GetAnnualRate(investmentType);
+
+        Console.WriteLine($"\nAvailable account balance: R$ {account.Balance:N2}");
         decimal investmentAmount = _inputService.ReadMoney("\nAmount to invest: ");
 
         if (investmentAmount <= 0)
@@ -120,6 +122,7 @@ public class InvestmentService
             Console.WriteLine($"Return: {profitPercentage:F2}%");
             Console.WriteLine($"Annual rate: {investment.AnnualRate:P2}");
             Console.WriteLine($"Invested since: {investment.InvestedAt:d}");
+            Console.WriteLine("---------------------------------------");
             Console.WriteLine();
         }
 
@@ -233,7 +236,7 @@ public class InvestmentService
         Console.WriteLine($"Net amount credited: R$ {netRedemption:C}");
         Console.WriteLine("\n======================================");
 
-        Thread.Sleep(3000);
+        Thread.Sleep(7000);
     }
     public void ShowPortfolio(BankAccount account)
     {
@@ -266,10 +269,6 @@ public class InvestmentService
             totalInvested += investment.RemainingAmount;
             totalCurrentValue += investment.CurrentValue;
             totalProfit += profit;
-
-            Console.Clear();
-
-            Console.WriteLine("========== SELECTED INVESTMENT ==========\n");
 
             Console.WriteLine($"Investment: {investment.Type}");
             Console.WriteLine($"Initial investment: {investment.InvestmentAmount:C}");
@@ -529,13 +528,14 @@ public class InvestmentService
         InvestmentInfo info = GetInvestmentInfo(result.InvestmentType);
 
         Console.WriteLine("========== INVESTMENT SIMULATION ==========\n");
-        Console.WriteLine($"Investment: {result.InvestmentType}");
-        Console.WriteLine($"Annual rate: {result.AnnualRate:P2}");
-        Console.WriteLine($"Investment period: {result.Years} year(s)");
-        Console.WriteLine();
 
+        Console.WriteLine($"Investment: {result.InvestmentType}");
         Console.WriteLine($"Initial investment: {result.InitialInvestment:C}");
 
+        Console.WriteLine();
+
+        Console.WriteLine($"Annual rate: {result.AnnualRate:P2}");
+        Console.WriteLine($"Investment period: {result.Years} year(s)");
         Console.WriteLine();
 
         Console.WriteLine("============ INVESTMENT PROFILE ============\n");

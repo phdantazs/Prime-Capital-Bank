@@ -78,7 +78,7 @@ while (true)
 public void CreateAccount()
 {
     Console.Clear();
-    Console.WriteLine("\n========== OPEN AN ACCOUNT ==========\n");
+    Console.WriteLine("========== OPEN AN ACCOUNT ==========\n");
 
     Console.Write("Please enter your full name: ");
     string fullName = _inputService.ReadFullName();
@@ -201,10 +201,11 @@ public void ShowRegisteredAccounts()
                 Console.WriteLine($"Account Number: {account.AccountNumber}");
                 Console.WriteLine($"Balance: R${account.Balance:N2}");
                 Console.WriteLine($"Created At: {account.CreatedAt:dd/MM/yyyy}");
+                Console.WriteLine("----------------------------------------------\n");
             }
 
             }
-             Console.WriteLine("Press any key to return...");
+             Console.WriteLine("\nPress any key to return...");
              Console.ReadKey();
              Console.Clear();
     }
@@ -219,7 +220,7 @@ public void SignIn()
     Console.Write("Account Number: ");
     string accountNumber = Console.ReadLine()!;
 
-    Console.Write("Enter your PIN: ");
+    Console.Write("\nEnter your PIN: ");
     string pin = _inputService.ReadPin()!;
 
     Console.WriteLine();
@@ -280,23 +281,25 @@ public void SignIn()
             Console.WriteLine("\n8 - Logout\n");
 
             Console.Write("\nWhat you need?: ");
-
-        int option = _inputService.ReadMenuOption(1, 8);
+            int option = _inputService.ReadMenuOption(1, 8);
+            
+            Console.WriteLine();
+            Console.WriteLine("============================\n");
 
         switch (option)
         {
             case 1:
-                decimal amount = _inputService.ReadMoney("\nEnter the deposit amount: ");
+                decimal amount = _inputService.ReadMoney("Enter the deposit amount: ");
                 _accountService.Deposit(loggedAccount, amount);
                 break;
             
             case 2:
-                decimal withdrawalAmount = _inputService.ReadMoney("\nWithdrawal amount: ");
+                decimal withdrawalAmount = _inputService.ReadMoney("Withdrawal amount: ");
                 _accountService.Withdraw(loggedAccount, withdrawalAmount);
                 break;
         
             case 3:
-                Console.Write("\nDestination account number: ");
+                Console.Write("Destination account number: ");
                 string destinationAccountNumber = Console.ReadLine()!;
 
                 BankAccount? destinationAccount = null;
@@ -352,6 +355,7 @@ public void SignIn()
             case 7:
                 _authenticationService.ChangePin(loggedCustomer!);
                 Thread.Sleep(3000);
+                Console.Clear();
                 break;
 
             case 8: 
@@ -365,7 +369,7 @@ public void SignIn()
                 break;
 
         }
-        }
+    }
 }
 
 private void OpenInvestmentMenu(BankAccount account)
@@ -383,8 +387,9 @@ private void OpenInvestmentMenu(BankAccount account)
             Console.WriteLine("5 - Back");
 
             Console.Write("\nOption: ");
-
             int option = _inputService.ReadMenuOption(1, 5);
+
+            Console.WriteLine("\n========================\n");
 
             switch (option)
             {
@@ -405,6 +410,7 @@ private void OpenInvestmentMenu(BankAccount account)
                     break;
 
                 case 5:
+                    Console.Clear();
                     return;
             }
         }
@@ -435,6 +441,8 @@ private void OpenInvestmentMenu(BankAccount account)
                         break;
 
                     case 2:
+                        Console.WriteLine();
+                        Console.Clear();
                         return;
                 }
             }
@@ -453,7 +461,7 @@ private void OpenInvestmentMenu(BankAccount account)
                 Console.WriteLine("6 - Close Bitcoin Account");
                 Console.WriteLine("7 - Back");
 
-                Console.WriteLine("\nOption: ");
+                Console.Write("\nOption: ");
 
                 int option = _inputService.ReadMenuOption(1, 7);
 

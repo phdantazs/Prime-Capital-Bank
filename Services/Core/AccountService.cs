@@ -56,7 +56,7 @@ public void Deposit(BankAccount account, decimal amount)
         Console.WriteLine("\nDeposit completed sucessfully!");
         Console.WriteLine($"\nYour actual balance is: R$ {account.Balance:N2}");
 
-        Thread.Sleep(2000);
+        Thread.Sleep(3000);
         Console.Clear();
     }
 
@@ -92,7 +92,7 @@ public void Withdraw(BankAccount account, decimal amount)
     Console.WriteLine("\nWithdrawal completed successfully!");
     Console.WriteLine($"\nCurrent Balance: R$ {account.Balance:N2}");
 
-    Thread.Sleep(2500);
+    Thread.Sleep(3000);
     Console.Clear();
 }
 
@@ -166,12 +166,14 @@ public void Statement(BankAccount account)
 
             Console.WriteLine(
                 $"{transaction.Date:dd/MM/yyyy HH:mm} | " +
-                $"{transaction.Description, -45} | " + 
-                $"{signal} R$ {transaction.Amount,15:N2} | " +
-                $"{transaction.TransactionId}");
+                $"{transaction.Description, -70} | " + 
+                $"{signal} R$ {transaction.Amount,12:N2}");
+
+                Console.WriteLine($"Transaction ID: {transaction.TransactionId}\n");
         }
     }
 
+    Console.WriteLine("----------------------------------------------------------");
     Console.WriteLine("\nPress any key to return...");
     Console.ReadKey();
     Console.Clear();

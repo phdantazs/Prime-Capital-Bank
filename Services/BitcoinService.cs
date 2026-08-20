@@ -24,9 +24,9 @@ public class BitcoinService
 
         account.BitcoinWallet = new BitcoinWallet();
 
-        Console.WriteLine("\n====================================");
-        Console.WriteLine("Bitcoin account created successfully!");
-        Console.WriteLine("======================================");
+        Console.WriteLine("\n============================================");
+        Console.WriteLine("  \nBitcoin account created successfully!");
+        Console.WriteLine("\n============================================");
         Console.WriteLine("\nYour Bitcoin wallet is now ready to use.");
 
         Thread.Sleep(3000);
@@ -61,6 +61,7 @@ public class BitcoinService
         Console.WriteLine("========== BUY BITCOIN ==========\n");
 
         Console.WriteLine($"Current Bitcoin price: R$ {bitcoinPrice:N2}");
+        Console.WriteLine($"\nAvailable account balance: R$ {account.Balance:N2}");
 
         decimal amount = _inputService.ReadMoney("\nAmount to invest: ");
 
@@ -121,8 +122,9 @@ public class BitcoinService
        decimal bitcoinBalance = account.BitcoinWallet.Balance;
        decimal availableValue = bitcoinBalance * bitcoinPrice;
 
-       Console.WriteLine($"\nYour Bitcoin balance is: {bitcoinBalance.ToString("G29", CultureInfo.InvariantCulture)} BTC");
+       Console.WriteLine($"\nYour Bitcoin balance is: {bitcoinBalance.ToString("F7", CultureInfo.InvariantCulture)} BTC");
        Console.WriteLine($"\nAvailable value: R$ {availableValue:N2}");
+       Console.WriteLine("\n==================================================");
 
        Console.WriteLine("\nHow do you want to sell?");
 
@@ -130,8 +132,9 @@ public class BitcoinService
        Console.WriteLine("\n2 - Sell by BRL amount");
 
        Console.Write("\nChoose an option: ");
-
        int option = _inputService.ReadMenuOption(1, 2);
+
+       Console.WriteLine("\n=======================\n");
 
        decimal bitcoinAmount;
        decimal totalAmount;
@@ -160,7 +163,7 @@ public class BitcoinService
 
         else
         {
-            totalAmount = _inputService.ReadMoney("\nAmount in BRL to sell: ");
+            totalAmount = _inputService.ReadMoney("Amount in BRL to sell: ");
 
             if (totalAmount <= 0)
             {
@@ -169,7 +172,7 @@ public class BitcoinService
                 return;
             }
 
-            if (totalAmount > availableValue)
+            if (totalAmount > availableValue || bitcoinBalance <= 0)
             {
                 Console.WriteLine("\nInsufficient Bitcoin balance.");
                 Thread.Sleep(1500);
@@ -198,6 +201,10 @@ public class BitcoinService
         }
 
         account.BitcoinWallet.Balance -= bitcoinAmount;
+        
+        if (account.BitcoinWallet.Balance < 0.0000001m)
+            account.BitcoinWallet.Balance = 0m;
+        
         account.Balance += totalAmount;
 
         account.BitcoinWallet.Transactions.Add(new BitcoinTransaction
@@ -213,16 +220,17 @@ public class BitcoinService
             Date = DateTime.Now,
             Type = "Bitcoin Sale",
             Amount = totalAmount,
-            Description = $"Sale of {bitcoinAmount.ToString("G29", CultureInfo.InvariantCulture)} BTC",
+            Description = $"Sale of {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC",
             IsCredit = true
         });
         
+        Console.WriteLine("\n==============================================");
         Console.WriteLine("\nBitcoin sold successfully!");
-        Console.WriteLine($"BTC sold: {bitcoinAmount.ToString("G29", CultureInfo.InvariantCulture)}");
+        Console.WriteLine($"\nBTC sold: {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)}");
 
-        Console.WriteLine($"Amount received: R$ {totalAmount:N2}");
+        Console.WriteLine($"\nAmount received: R$ {totalAmount:N2}");
 
-        Thread.Sleep(3000);
+        Thread.Sleep(5000);
     }
 
     public void ShowBitcoinWallet(BankAccount account)
@@ -251,7 +259,8 @@ public class BitcoinService
         Console.Clear();
 
         Console.WriteLine("========== MY BITCOIN WALLET ==========\n");
-        Console.WriteLine($"Bitcoin balance: {bitcoinBalance.ToString("G29", CultureInfo.InvariantCulture)} BTC");
+
+        Console.WriteLine($"Bitcoin balance: {bitcoinBalance.ToString("F7", CultureInfo.InvariantCulture)} BTC");
         Console.WriteLine($"Current Bitcoin price: R$ {bitcoinPrice:N2}");
         Console.WriteLine($"Wallet value: R$ {walletValue:N2}");
         Console.WriteLine("\n--------------------------------------");
@@ -295,10 +304,9 @@ public class BitcoinService
             Console.WriteLine($"Bitcoin Price: R$ {transaction.BitcoinPrice:N2}");
             Console.WriteLine($"Total Amount: R$ {transaction.TotalAmount:N2}");
             Console.WriteLine($"Date: {transaction.CreatedAt:dd/MM/yyyy HH:mm:ss}");
+            Console.WriteLine("----------------------------------\n");
         }
-            Console.WriteLine("----------------------------------");
-
-            Console.WriteLine("\nPress ENTER to return.");
+            Console.WriteLine("Press ENTER to return.");
             Console.ReadLine();
     }
 
@@ -311,10 +319,10 @@ public class BitcoinService
             return;
         }
 
-        if (account.BitcoinWallet.Balance > 0)
+        if (account.BitcoinWallet.Balance > 0.0000001m)
         {
             Console.WriteLine("\nYou cannot close your Bitcoin account while you still have Bitcoin.");
-            Console.WriteLine("Please sell all your Bitcoin before closing the account.");
+            Console.WriteLine("\nPlease sell all your Bitcoin before closing the account.");
             Thread.Sleep(3500);
 
             return;
