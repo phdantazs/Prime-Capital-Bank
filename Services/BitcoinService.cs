@@ -98,7 +98,7 @@ public class BitcoinService
             Date = DateTime.Now,
             Type = "Bitcoin Purchase",
             Amount = amount,
-            Description = $"Purchase of {bitcoinAmount.ToString("G29", CultureInfo.InvariantCulture)} BTC",
+            Description = $"Purchase of {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC",
             IsCredit = false
         });
     }
@@ -141,7 +141,7 @@ public class BitcoinService
 
        if (option == 1)
         {
-            bitcoinAmount = _inputService.ReadBitcoinAmount("\nAmount of Bitcoin to sell: ");
+            bitcoinAmount = _inputService.ReadBitcoinAmount("Amount of Bitcoin to sell: ");
 
             if (bitcoinAmount <= 0)
             {
@@ -185,7 +185,7 @@ public class BitcoinService
 
         Console.WriteLine("\n========== SALE SUMMARY ==========\n");
 
-        Console.WriteLine($"Bitcoin amount: {bitcoinAmount.ToString("G29", CultureInfo.InvariantCulture)} BTC");
+        Console.WriteLine($"Bitcoin amount: {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC");
         Console.WriteLine($"\nBitcoin price: R$ {bitcoinPrice:N2}");
         Console.WriteLine($"\nAmount received: R$ {totalAmount:N2}");
 
