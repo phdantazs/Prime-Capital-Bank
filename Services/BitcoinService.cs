@@ -120,7 +120,7 @@ public class BitcoinService
         Console.WriteLine($"Current Bitcoin price: R$ {bitcoinPrice:N2}");
 
        decimal bitcoinBalance = account.BitcoinWallet.Balance;
-       decimal availableValue = bitcoinBalance * bitcoinPrice;
+       decimal availableValue = Math.Round(bitcoinBalance * bitcoinPrice, 2);
 
        Console.WriteLine($"\nYour Bitcoin balance is: {bitcoinBalance.ToString("F7", CultureInfo.InvariantCulture)} BTC");
        Console.WriteLine($"\nAvailable value: R$ {availableValue:N2}");
@@ -172,6 +172,8 @@ public class BitcoinService
                 return;
             }
 
+            totalAmount = Math.Round(totalAmount, 2);
+
             if (totalAmount > availableValue || bitcoinBalance <= 0)
             {
                 Console.WriteLine("\nInsufficient Bitcoin balance.");
@@ -179,8 +181,16 @@ public class BitcoinService
                 return;
             }
 
-            bitcoinAmount = totalAmount / bitcoinPrice;
-            totalAmount = Math.Round(totalAmount, 2);
+            if (totalAmount == availableValue)
+            {
+                bitcoinAmount = bitcoinBalance;
+                totalAmount = Math.Round(bitcoinAmount * bitcoinPrice, 2);
+            }
+
+            else
+            {
+                bitcoinAmount = totalAmount / bitcoinPrice; 
+            } 
         }
 
         Console.WriteLine("\n========== SALE SUMMARY ==========\n");
