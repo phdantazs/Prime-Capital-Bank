@@ -39,6 +39,7 @@ public class AuthenticationService
         if (DateTime.Now < account.BlockedUntil.Value)
         {
             TimeSpan remaining = account.BlockedUntil.Value - DateTime.Now;
+
             Console.WriteLine($"\nThis account is temporarily blocked. Try again in {remaining.Minutes:D2}:{remaining.Seconds:D2}.");
 
             return false;
@@ -54,20 +55,21 @@ public class AuthenticationService
     if (account.Pin != pin)
     {
         account.FailedLoginAttempts++;
-        int remainingAttempts = 3 - account.FailedLoginAttempts;
+        
+        if (account.FailedLoginAttempts >= 3)
+            {
+                account.BlockedUntil = DateTime.Now.AddMinutes(2);
+                Console.WriteLine("\nYour account has been temporarily blocked for 2 minutes.");
+            }
 
-        if (remainingAttempts > 0)
-        {
-            Console.WriteLine($"\nInvalid PIN. {remainingAttempts} attempt(s) remaining.");
-        }
-        else
-        {
-            account.BlockedUntil = DateTime.Now.AddMinutes(2);
-            Console.WriteLine("\nYour account has been temporarily blocked for 2 minutes.");
-        }
+            else
+            {
+                int remainingAttempts = 3 - account.FailedLoginAttempts;
+
+                Console.WriteLine($"\nInvalid PIN, {remainingAttempts} attempt(s) remaining");
+            }
 
         return false;
-
     }
 
     // Successful login

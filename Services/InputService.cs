@@ -1,7 +1,3 @@
-using System.Data.Common;
-using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
 using System.Linq;
 
 namespace PrimeCapitalBank.Services;
@@ -183,17 +179,11 @@ public class InputService
 
     public void RedrawMoney(int left, int top, string digits)
     {
-        decimal value = 0;
-
-        if (digits.Length > 0)
-            value = decimal.Parse(digits) / 100;
+        decimal value = ParseMoney(digits);
 
         Console.SetCursorPosition(left, top);
-        //Limpa toda área do valor
-        Console.Write(new string(' ', 20));
-        //Volta para o início do valor
+        Console.Write(new string(' ', MoneyFieldWidth));
         Console.SetCursorPosition(left, top);
-        //Escreve novamente
         Console.Write($"R$ {value:N2}");
     }
 

@@ -33,7 +33,7 @@ public class IncomeTaxService
     foreach (Investment investment in account.Investments)
     {
         decimal currentValue = _investmentService.CalculateCurrentValue(investment);
-        decimal profit = currentValue - investment.InvestmentAmount;
+        decimal profit = currentValue - investment.RemainingAmount;
         
         decimal taxRate = _taxService.GetTaxRate(investment);
         decimal tax = 
@@ -52,7 +52,7 @@ public class IncomeTaxService
         Console.WriteLine($"Profit: {profit:C}");
         Console.WriteLine($"Income tax rate: {taxRate:P1}");
         Console.WriteLine($"Income tax: {tax:C}");
-        Console.WriteLine($"Net redemption value: {netValue:C}");
+        Console.WriteLine($"Net value after tax: {netValue:C}");
         Console.WriteLine("--------------------------------------\n");
     }
 

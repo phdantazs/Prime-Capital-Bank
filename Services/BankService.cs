@@ -266,7 +266,7 @@ public void SignIn()
     Console.WriteLine($"Member since : {loggedAccount.CreatedAt.Year}");
     Console.WriteLine($"Account Type : {_accountService.GetAccountType(loggedAccount.AccountType)}");
     Console.WriteLine($"Account No.  : {loggedAccount.AccountNumber}");
-    Console.WriteLine($"Balance      : ${loggedAccount.Balance:N2}\n");
+    Console.WriteLine($"Balance      : R${loggedAccount.Balance:N2}\n");
 
     while (true)
         {
@@ -327,14 +327,8 @@ public void SignIn()
                         break;
                     }
 
-                    Console.WriteLine("\nTransfer amount: ");
-
-                    if (!decimal.TryParse(Console.ReadLine(), out decimal transferAmount))
-                    {
-                        Console.WriteLine("\nInvalid amount.");
-                        Thread.Sleep(2000);
-                        break;
-                    }
+                    decimal transferAmount = 
+                        _inputService.ReadMoney("\nTransfer amount: ");
 
                     _accountService.Transfer(loggedAccount, destinationAccount, transferAmount);
 

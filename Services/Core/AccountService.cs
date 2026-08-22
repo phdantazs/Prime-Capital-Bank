@@ -1,7 +1,5 @@
 using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Models.Enums;
-using System;
-using System.Linq;
 
 namespace PrimeCapitalBank.Services.Core;
 
@@ -10,7 +8,7 @@ public class AccountService
     private int _nextAccountNumber = 1001;
     public string GenerateAccountNumber(AccountType accountType)
     {
-        string suffix = accountType == AccountType.Checking ? "C" : "P";
+        string suffix = accountType == AccountType.Checking ? "C" : "S";
         string accountNumber = $"{_nextAccountNumber:D6}-{suffix}";
         _nextAccountNumber++;
 
@@ -18,9 +16,12 @@ public class AccountService
     }
     public string GetAccountType(AccountType accountType)
     {
-        return accountType == AccountType.Checking
-            ? "Checking Account"
-            : "Savings Account";
+        return accountType switch
+        {
+            AccountType.Checking => "Checking Account",
+            AccountType.Savings => "Savings Account",
+            _ => throw new ArgumentOutOfRangeException(nameof(accountType), "Invalid account type.")
+        };
     }
 
     public BankAccount CreateAccount(AccountType accountType)
@@ -53,7 +54,7 @@ public void Deposit(BankAccount account, decimal amount)
             IsCredit = true
         });
 
-        Console.WriteLine("\nDeposit completed sucessfully!");
+        Console.WriteLine("\nDeposit completed successfully!");
         Console.WriteLine($"\nYour actual balance is: R$ {account.Balance:N2}");
 
         Thread.Sleep(3000);
@@ -64,7 +65,7 @@ public void Withdraw(BankAccount account, decimal amount)
     {
         if (amount <= 0)
         {
-            Console.WriteLine("\nThe withdrawal ammount must be greater than zero.");
+            Console.WriteLine("\nThe withdrawal amount must be greater than zero.");
             Thread.Sleep(2000);
             return;
         }
@@ -130,7 +131,7 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
             IsCredit = true
         });
 
-        Console.WriteLine("\nTransfer completed sucessfully!");
+        Console.WriteLine("\nTransfer completed successfully!");
         Console.WriteLine($"\nTransferred amount: R$ {amount:N2}");
         Console.WriteLine($"\nCurrent balance: R$ {originAccount.Balance:N2}");
 
@@ -147,11 +148,12 @@ public void Statement(BankAccount account)
         Console.WriteLine("=========================");
 
     Console.WriteLine($"\nAccount Number: {account.AccountNumber}");
-    Console.WriteLine($"Account Type: {account.AccountType}");
+    Console.WriteLine($"Account Type: {GetAccountType(account.AccountType)}");
     Console.WriteLine($"Created At: {account.CreatedAt:dd/MM/yyyy HH:mm}");
     Console.WriteLine($"Current Balance: R$ {account.Balance:N2}");
 
-    Console.WriteLine("\n-------------------------------------------------------");
+    Console.WriteLine();
+    Console.WriteLine(new string('-', 125));
     Console.WriteLine("\nTransactions:\n");
 
     if (account.Transactions.Count == 0)
@@ -166,19 +168,17 @@ public void Statement(BankAccount account)
 
             Console.WriteLine(
                 $"{transaction.Date:dd/MM/yyyy HH:mm} | " +
+                $"{transaction.Type, -25} | " +
                 $"{transaction.Description, -70} | " + 
                 $"{signal} R$ {transaction.Amount,12:N2}");
 
-                Console.WriteLine($"Transaction ID: {transaction.TransactionId}\n");
+                Console.WriteLine($"\nTransaction ID: {transaction.TransactionId}\n");
         }
     }
 
-    Console.WriteLine("----------------------------------------------------------");
+    Console.WriteLine(new string('-', 125));
     Console.WriteLine("\nPress any key to return...");
     Console.ReadKey();
     Console.Clear();
     }
 }
-
-
-

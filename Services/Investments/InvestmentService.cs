@@ -1,9 +1,7 @@
-using System.Data.Common;
-using System.Runtime.ExceptionServices;
 using System.Linq;
 using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Models.Enums;
-using System.ComponentModel.DataAnnotations;
+
 namespace PrimeCapitalBank.Services.Investments;
 
 public class InvestmentService
@@ -83,7 +81,7 @@ public class InvestmentService
             RemainingAmount = amount,
             CurrentValue = amount,
             AnnualRate = annualRate,
-            InvestedAt = DateTime.Now.AddDays(-457)
+            InvestedAt = DateTime.Now.AddDays(-911)
         };
     }
     
@@ -152,7 +150,7 @@ public class InvestmentService
         Console.WriteLine($"Current invested amount: {selectedInvestment.RemainingAmount:C}");
         Console.WriteLine($"Current value: {selectedInvestment.CurrentValue:C}");
         Console.WriteLine($"Profit: {currentProfit:C}");
-        Console.WriteLine($"Return: {profitabilityPercentage:F2}");
+        Console.WriteLine($"Return: {profitabilityPercentage:F2}%");
         Console.WriteLine($"Annual rate: {selectedInvestment.AnnualRate:P2}");
         Console.WriteLine($"Invested since: {selectedInvestment.InvestedAt: dd/MM/yyyy}");
 
@@ -300,7 +298,9 @@ public class InvestmentService
         int days = (DateTime.Now - investment.InvestedAt).Days;
 
         decimal dailyRate =
-            investment.AnnualRate / 365m;
+            (decimal)Math.Pow(
+                (double)(1 + investment.AnnualRate),
+                1.0 / 365.0) - 1;
 
         decimal currentValue =
             investment.RemainingAmount *
@@ -417,7 +417,10 @@ public class InvestmentService
         decimal totalContributed = result.InitialInvestment;
 
         int totalMonths = result.Years * 12;
-        decimal monthlyRate = result.AnnualRate / 12;
+        decimal monthlyRate = 
+            (decimal)Math.Pow(
+                (double)(1 + result.AnnualRate),
+                1.0 / 12.0) - 1;
 
         //Armazena todo aporte e o mês que o aporte entrou na simulação do investimento.
         List<(decimal Amount, int MonthInvested)> contributions = new();
@@ -465,8 +468,6 @@ public class InvestmentService
             {
                 int monthsInvested = totalMonths - contribution.MonthInvested;
 
-                int daysInvested = monthsInvested * 30;
-
                 decimal contributionFutureValue =
                     contribution.Amount *
                     CalculateCompoundGrowth(monthlyRate, monthsInvested);
@@ -476,24 +477,7 @@ public class InvestmentService
                 if (contribuitonProfit <= 0)
                     continue;
 
-                decimal taxRate;
-
-                if (daysInvested <= 180)
-                {
-                    taxRate = 0.225m;
-                }
-                else if (daysInvested <= 360)
-                {
-                    taxRate = 0.20m;
-                }
-                else if (daysInvested <= 720)
-                {
-                    taxRate = 0.175m;
-                }
-                else
-                {
-                    taxRate = 0.15m;
-                }
+                decimal taxRate = GetSimulationTaxRate(monthsInvested);
 
                 incomeTax += contribuitonProfit * taxRate;
             }
@@ -867,5 +851,21 @@ public class InvestmentService
             Description = description,
             IsCredit = isCredit
         });
+    }
+
+    private decimal GetSimulationTaxRate(int monthsInvested)
+    {
+        int daysInvested = monthsInvested * 30;
+
+        if (daysInvested <= 180)
+            return 0.225m;
+
+        if (daysInvested <= 360)
+            return 0.20m;
+
+        if (daysInvested <= 720)
+            return 0.175m;
+
+        return 0.15m;
     }
 }

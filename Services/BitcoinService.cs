@@ -101,6 +101,14 @@ public class BitcoinService
             Description = $"Purchase of {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC",
             IsCredit = false
         });
+
+        Console.WriteLine("\n======================================");
+        Console.WriteLine("\nBitcoin purchased successfully!");
+        Console.WriteLine($"\nBTC purchased: {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)}");
+        Console.WriteLine($"\nAmount invested: R$ {amount:N2}");
+        Console.WriteLine("\n======================================");
+
+        Thread.Sleep(5000);
     }
 
     public void SellBitcoin(BankAccount account)
@@ -211,8 +219,11 @@ public class BitcoinService
         }
 
         account.BitcoinWallet.Balance -= bitcoinAmount;
+
+        account.BitcoinWallet.Balance = 
+            Math.Round(account.BitcoinWallet.Balance, 7);
         
-        if (account.BitcoinWallet.Balance < 0.0000001m)
+        if (account.BitcoinWallet.Balance < 0)
             account.BitcoinWallet.Balance = 0m;
         
         account.Balance += totalAmount;
@@ -254,7 +265,10 @@ public class BitcoinService
 
         decimal bitcoinPrice = GetBitcoinPrice();
         decimal bitcoinBalance = account.BitcoinWallet.Balance;
-        decimal walletValue = bitcoinBalance * bitcoinPrice;
+
+        decimal walletValue = Math.Round(
+            bitcoinBalance * bitcoinPrice,
+            2);
 
         decimal totalBought = account.BitcoinWallet.Transactions
             .Where(transaction => transaction.Type == BitcoinTransactionType.Buy)
@@ -329,7 +343,7 @@ public class BitcoinService
             return;
         }
 
-        if (account.BitcoinWallet.Balance > 0.0000001m)
+        if (account.BitcoinWallet.Balance > 0)
         {
             Console.WriteLine("\nYou cannot close your Bitcoin account while you still have Bitcoin.");
             Console.WriteLine("\nPlease sell all your Bitcoin before closing the account.");
