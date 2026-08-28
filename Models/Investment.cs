@@ -1,12 +1,18 @@
 using PrimeCapitalBank.Models.Enums;
+
 namespace PrimeCapitalBank.Models;
 public class Investment
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public int BankAccountId { get; set; }
+    public BankAccount BankAccount { get; set; } = null!;
     public InvestmentType Type { get; set; }
     public decimal InvestmentAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public decimal CurrentValue { get; set; }
     public decimal AnnualRate { get; set; }
-    public DateTime InvestedAt { get; set; }
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTime InvestedAt { get; set; } = DateTime.UtcNow;
+    public InvestmentStatus Status { get; set; } = InvestmentStatus.Active;
+    public DateTime? RedeemedAt { get; set; }
+    public List<InvestmentRedemption> Redemptions { get; set; } = new();
 }
