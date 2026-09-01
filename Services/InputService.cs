@@ -415,6 +415,14 @@ private string FormatWord(string word)
                 System.Globalization.CultureInfo.InvariantCulture,
                 out decimal value))
             {
+                decimal roundedValue = Math.Round(value, 8);
+
+                if (value != roundedValue)
+                {
+                    Console.WriteLine("\nBitcoin amount cannot have more than 8 decimal places.");
+                    continue;
+                }
+
                 return value;
             }
 

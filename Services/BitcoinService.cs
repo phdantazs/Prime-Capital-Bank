@@ -17,12 +17,32 @@ public class BitcoinService
     {
         if (account.BitcoinWallet != null)
         {
-            Console.WriteLine("\nYou already have a Bitcoin account.");
+            if (account.BitcoinWallet.Status == BitcoinWalletStatus.Active)
+            {
+                Console.WriteLine("\nYou already have a Bitcoin account.");
+                Thread.Sleep(3000);
+                return;
+            }
+            
+            account.BitcoinWallet.Status = BitcoinWalletStatus.Active;
+            account.BitcoinWallet.ClosedAt = null;
+
+            Console.WriteLine("\n========================================");
+            Console.WriteLine("\nBitcoin account reopened successfully!");
+            Console.WriteLine("\n========================================");
+            Console.WriteLine("\nYour Bitcoin wallet is now ready to use.");
+
             Thread.Sleep(3000);
             return;
         }
 
-        account.BitcoinWallet = new BitcoinWallet();
+        account.BitcoinWallet = new BitcoinWallet
+        {
+          BankAccountId = account.Id,
+          BankAccount = account,
+          Balance = 0m,
+          Status = BitcoinWalletStatus.Active  
+        };
 
         Console.WriteLine("\n============================================");
         Console.WriteLine("  \nBitcoin account created successfully!");
@@ -34,7 +54,7 @@ public class BitcoinService
 
     private decimal GetBitcoinPrice()
     {
-        return 600000m;
+        return 406659.68m;
     }
 
     public void ShowBitcoinPrice()
@@ -54,6 +74,21 @@ public class BitcoinService
 
     public void BuyBitcoin(BankAccount account)
     {
+        if (account.BitcoinWallet == null)
+        {
+            Console.WriteLine("\nBitcoin account not found.");
+            Thread.Sleep(2000);
+            return;
+        }
+
+        if (account.BitcoinWallet.Status != BitcoinWalletStatus.Active)
+        {
+            Console.WriteLine("\nYour Bitcoin account is closed.");
+            Console.WriteLine("\nPlease reopen it before buying Bitcoin.");
+            Thread.Sleep(3000);
+            return;
+        }
+        
         decimal bitcoinPrice = GetBitcoinPrice();
 
         Console.Clear();
@@ -79,14 +114,19 @@ public class BitcoinService
             return;
         }
 
-        decimal bitcoinAmount = amount / bitcoinPrice;
+        decimal bitcoinAmount = Math.Round(
+            amount / bitcoinPrice,
+            8,
+            MidpointRounding.ToZero);
 
         account.Balance -= amount;
 
-        account.BitcoinWallet!.Balance += bitcoinAmount;
+        account.BitcoinWallet.Balance += bitcoinAmount;
 
         account.BitcoinWallet.Transactions.Add(new BitcoinTransaction
         {
+            BankAccountId = account.Id,
+            BitcoinWallet = account.BitcoinWallet,
             Type = BitcoinTransactionType.Buy,
             BitcoinAmount = bitcoinAmount,
             BitcoinPrice = bitcoinPrice,
@@ -95,16 +135,17 @@ public class BitcoinService
 
         account.Transactions.Add(new Transaction
         {
-            Date = DateTime.Now,
-            Type = "Bitcoin Purchase",
+            BankAccountId = account.Id,
+            BankAccount = account,
+            Type = TransactionType.BitcoinPurchase,
             Amount = amount,
-            Description = $"Purchase of {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC",
+            Description = $"Purchase of {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)} BTC",
             IsCredit = false
         });
 
         Console.WriteLine("\n======================================");
         Console.WriteLine("\nBitcoin purchased successfully!");
-        Console.WriteLine($"\nBTC purchased: {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)}");
+        Console.WriteLine($"\nBTC purchased: {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)}");
         Console.WriteLine($"\nAmount invested: R$ {amount:N2}");
         Console.WriteLine("\n======================================");
 
@@ -113,14 +154,22 @@ public class BitcoinService
 
     public void SellBitcoin(BankAccount account)
     {
-        decimal bitcoinPrice = GetBitcoinPrice();
-
         if (account.BitcoinWallet == null)
         {
             Console.WriteLine("\nBitcoin account not found.");
             Thread.Sleep(1500);
             return;
         }
+
+        if (account.BitcoinWallet.Status != BitcoinWalletStatus.Active)
+        {
+            Console.WriteLine("\nYour Bitcoin account is closed.");
+            Console.WriteLine("\nPlease reopen it before selling Bitcoin.");
+            Thread.Sleep(3000);
+            return;
+        }
+
+        decimal bitcoinPrice = GetBitcoinPrice();
 
         Console.Clear();
 
@@ -130,7 +179,7 @@ public class BitcoinService
        decimal bitcoinBalance = account.BitcoinWallet.Balance;
        decimal availableValue = Math.Round(bitcoinBalance * bitcoinPrice, 2);
 
-       Console.WriteLine($"\nYour Bitcoin balance is: {bitcoinBalance.ToString("F7", CultureInfo.InvariantCulture)} BTC");
+       Console.WriteLine($"\nYour Bitcoin balance is: {bitcoinBalance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
        Console.WriteLine($"\nAvailable value: R$ {availableValue:N2}");
        Console.WriteLine("\n==================================================");
 
@@ -197,13 +246,16 @@ public class BitcoinService
 
             else
             {
-                bitcoinAmount = totalAmount / bitcoinPrice; 
+                bitcoinAmount = Math.Round(
+                    totalAmount / bitcoinPrice,
+                    8,
+                    MidpointRounding.ToZero);
             } 
         }
 
         Console.WriteLine("\n========== SALE SUMMARY ==========\n");
 
-        Console.WriteLine($"Bitcoin amount: {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC");
+        Console.WriteLine($"Bitcoin amount: {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)} BTC");
         Console.WriteLine($"\nBitcoin price: R$ {bitcoinPrice:N2}");
         Console.WriteLine($"\nAmount received: R$ {totalAmount:N2}");
 
@@ -221,7 +273,7 @@ public class BitcoinService
         account.BitcoinWallet.Balance -= bitcoinAmount;
 
         account.BitcoinWallet.Balance = 
-            Math.Round(account.BitcoinWallet.Balance, 7);
+            Math.Round(account.BitcoinWallet.Balance, 8);
         
         if (account.BitcoinWallet.Balance < 0)
             account.BitcoinWallet.Balance = 0m;
@@ -230,6 +282,8 @@ public class BitcoinService
 
         account.BitcoinWallet.Transactions.Add(new BitcoinTransaction
         {
+            BankAccountId = account.Id,
+            BitcoinWallet = account.BitcoinWallet,
             Type = BitcoinTransactionType.Sell,
             BitcoinAmount = bitcoinAmount,
             BitcoinPrice = bitcoinPrice,
@@ -238,16 +292,17 @@ public class BitcoinService
 
         account.Transactions.Add(new Transaction
         {
-            Date = DateTime.Now,
-            Type = "Bitcoin Sale",
+            BankAccountId = account.Id,
+            BankAccount = account,
+            Type = TransactionType.BitcoinSale,
             Amount = totalAmount,
-            Description = $"Sale of {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC",
+            Description = $"Sale of {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)} BTC",
             IsCredit = true
         });
         
         Console.WriteLine("\n==============================================");
         Console.WriteLine("\nBitcoin sold successfully!");
-        Console.WriteLine($"\nBTC sold: {bitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)}");
+        Console.WriteLine($"\nBTC sold: {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)}");
 
         Console.WriteLine($"\nAmount received: R$ {totalAmount:N2}");
 
@@ -284,7 +339,8 @@ public class BitcoinService
 
         Console.WriteLine("========== MY BITCOIN WALLET ==========\n");
 
-        Console.WriteLine($"Bitcoin balance: {bitcoinBalance.ToString("F7", CultureInfo.InvariantCulture)} BTC");
+        Console.WriteLine($"Status: {account.BitcoinWallet.Status}");
+        Console.WriteLine($"Bitcoin balance: {bitcoinBalance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
         Console.WriteLine($"Current Bitcoin price: R$ {bitcoinPrice:N2}");
         Console.WriteLine($"Wallet value: R$ {walletValue:N2}");
         Console.WriteLine("\n--------------------------------------");
@@ -324,7 +380,7 @@ public class BitcoinService
                     .OrderByDescending(transaction => transaction.CreatedAt))
         {
             Console.WriteLine($"Type: {transaction.Type}");
-            Console.WriteLine($"BTC Amount: {transaction.BitcoinAmount.ToString("F7", CultureInfo.InvariantCulture)} BTC");
+            Console.WriteLine($"BTC Amount: {transaction.BitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)} BTC");
             Console.WriteLine($"Bitcoin Price: R$ {transaction.BitcoinPrice:N2}");
             Console.WriteLine($"Total Amount: R$ {transaction.TotalAmount:N2}");
             Console.WriteLine($"Date: {transaction.CreatedAt:dd/MM/yyyy HH:mm:ss}");
@@ -340,6 +396,13 @@ public class BitcoinService
         {
             Console.WriteLine("\nBitcoin account not found.");
             Thread.Sleep(1500);
+            return;
+        }
+
+        if (account.BitcoinWallet.Status == BitcoinWalletStatus.Closed)
+        {
+            Console.WriteLine("\nYour Bitcoin account is already closed.");
+            Thread.Sleep(2000);
             return;
         }
 
@@ -368,7 +431,8 @@ public class BitcoinService
             return;
         }
 
-        account.BitcoinWallet = null;
+        account.BitcoinWallet.Status = BitcoinWalletStatus.Closed;
+        account.BitcoinWallet.ClosedAt = DateTime.UtcNow;
         
         Console.WriteLine("\nBitcoin account closed successfully!");
 

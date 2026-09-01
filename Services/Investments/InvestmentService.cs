@@ -51,6 +51,7 @@ public class InvestmentService
         }
 
         Investment investment = CreateInvestment(
+            account,
             investmentType,
             investmentAmount,
             annualRate);
@@ -60,9 +61,9 @@ public class InvestmentService
 
         AddTransaction(
             account,
-            "Investment",
+            TransactionType.Investment,
             investmentAmount,
-            $"Investment {investment.Type}",
+            $"Investment in {investmentType}",
             false);
 
         Console.WriteLine("\nInvestment completed successfully!");
@@ -70,24 +71,32 @@ public class InvestmentService
     }
 
     private Investment CreateInvestment(
+        BankAccount account,
         InvestmentType type,
         decimal amount,
         decimal annualRate)
     {
         return new Investment
         {
+            BankAccountId = account.Id,
+            BankAccount = account,
             Type = type,
             InvestmentAmount = amount,
             RemainingAmount = amount,
             CurrentValue = amount,
             AnnualRate = annualRate,
-            InvestedAt = DateTime.Now.AddDays(-911)
+            InvestedAt = DateTime.UtcNow,
+            Status = InvestmentStatus.Active
         };
     }
     
     public void Redeem(BankAccount account)
     {
-        if (!account.Investments.Any())
+        List<Investment> activeInvestments = account.Investments
+            .Where(i => i.Status == InvestmentStatus.Active)
+            .ToList();
+
+        if (!activeInvestments.Any())
         {
             Console.WriteLine("\nYou have no investments to redeem.");
             Thread.Sleep(3000);
@@ -100,7 +109,7 @@ public class InvestmentService
 
         for (int i = 0; i < account.Investments.Count; i++)
         {
-            Investment investment = account.Investments[i];
+            Investment investment = activeInvestments[i];
 
             decimal currentValue = CalculateCurrentValue(investment);
 
@@ -126,8 +135,8 @@ public class InvestmentService
 
         Console.Write("Choose an investment to redeem: ");
 
-        int option = _inputService.ReadMenuOption(1, account.Investments.Count);
-        Investment selectedInvestment = account.Investments[option - 1];
+        int option = _inputService.ReadMenuOption(1, activeInvestments.Count);
+        Investment selectedInvestment = activeInvestments[option - 1];
 
         //Atualiza o valor atual do investimento
         selectedInvestment.CurrentValue = CalculateCurrentValue(selectedInvestment);
@@ -204,14 +213,27 @@ public class InvestmentService
 
         Transaction redemptionTransaction = new Transaction
         {
-            Date = DateTime.Now,
-            Type = "Investment Redemption",
+            BankAccountId = account.Id,
+            BankAccount = account,
+            Type = TransactionType.InvestmentRedemption,
             Amount = netRedemption,
             Description = $"Investment Redemption of {selectedInvestment.Type} (Taxes already deducted).",
             IsCredit = true
         };
 
         account.Transactions.Add(redemptionTransaction);
+
+        InvestmentRedemption redemption = new InvestmentRedemption
+        {
+            InvestmentId = selectedInvestment.Id,
+            Investment = selectedInvestment,
+            GrossAmount = redemptionValue,
+            PrincipalAmount = redeemedPrincipal,
+            ProfitAmount = redeemedProfit,
+            TaxRate = taxRate,
+            TaxAmount = incomeTax,
+            NetAmount = netRedemption
+        };
 
         selectedInvestment.CurrentValue -= redemptionValue;
         selectedInvestment.RemainingAmount -= redeemedPrincipal;
@@ -224,7 +246,8 @@ public class InvestmentService
 
         if (selectedInvestment.CurrentValue == 0)
         {
-            account.Investments.Remove(selectedInvestment);
+            selectedInvestment.Status = InvestmentStatus.Redeemed;
+            selectedInvestment.RedeemedAt = DateTime.UtcNow;
         }
         
         Console.WriteLine("\n======================================");
@@ -238,7 +261,11 @@ public class InvestmentService
     }
     public void ShowPortfolio(BankAccount account)
     {
-        if (!account.Investments.Any())
+        List<Investment> activeInvestments = account.Investments
+            .Where(i => i.Status == InvestmentStatus.Active)
+            .ToList();
+
+        if (!activeInvestments.Any())
         {
             Console.WriteLine("\nYou have no investments available.");
             Thread.Sleep(3000);
@@ -253,7 +280,7 @@ public class InvestmentService
         decimal totalCurrentValue = 0;
         decimal totalProfit = 0;
 
-        foreach (Investment investment in account.Investments)
+        foreach (Investment investment in activeInvestments)
         {
             investment.CurrentValue = CalculateCurrentValue(investment);
 
@@ -295,7 +322,7 @@ public class InvestmentService
     }
     public decimal CalculateCurrentValue(Investment investment)
     {
-        int days = (DateTime.Now - investment.InvestedAt).Days;
+        int days = (DateTime.UtcNow - investment.InvestedAt).Days;
 
         decimal dailyRate =
             (decimal)Math.Pow(
@@ -316,7 +343,7 @@ public class InvestmentService
 
         Console.WriteLine("========== INVESTMENT SIMULATOR ==========\n");
 
-        SimulationResult result = BuildSimulation();
+        InvestmentSimulation result = BuildSimulation();
 
         result = CalculateSimulation(result);
 
@@ -324,7 +351,7 @@ public class InvestmentService
 
         InvestorProfile profile = AskInvestorProfile();
 
-        List<SimulationResult> comparison = CompareInvestments(result);
+        List<InvestmentSimulation> comparison = CompareInvestments(result);
 
         DisplayComparison(comparison);
         
@@ -357,7 +384,7 @@ public class InvestmentService
        return account.Balance >= amount;
     }
 
-    private SimulationResult BuildSimulation()
+    private InvestmentSimulation BuildSimulation()
     {
         InvestmentType investmentType = SelectInvestmentType();
 
@@ -400,7 +427,7 @@ public class InvestmentService
 
         int years = _inputService.ReadMenuOption(1, 30);
 
-        return new SimulationResult
+        return new InvestmentSimulation
         {
             InvestmentType = investmentType,
             AnnualRate = annualRate,
@@ -411,7 +438,7 @@ public class InvestmentService
         };
     }
 
-    private SimulationResult CalculateSimulation(SimulationResult result)
+    private InvestmentSimulation CalculateSimulation(InvestmentSimulation result)
     {
         decimal balance = result.InitialInvestment;
         decimal totalContributed = result.InitialInvestment;
@@ -505,7 +532,7 @@ public class InvestmentService
             months);
     }
 
-    private void DisplaySimulation(SimulationResult result)
+    private void DisplaySimulation(InvestmentSimulation result)
     {
         Console.Clear();
 
@@ -555,13 +582,13 @@ public class InvestmentService
         Console.WriteLine($"Profitability: {profitability:F2}%");
     }
 
-    private List<SimulationResult> CompareInvestments(SimulationResult baseSimulation)
+    private List<InvestmentSimulation> CompareInvestments(InvestmentSimulation baseSimulation)
     {
-        List<SimulationResult> results = new();
+        List<InvestmentSimulation> results = new();
 
         foreach (InvestmentType investmentType in Enum.GetValues<InvestmentType>())
         {
-            SimulationResult simulation = new()
+            InvestmentSimulation simulation = new()
             {
                 InvestmentType = investmentType,
                 InitialInvestment = baseSimulation.InitialInvestment,
@@ -632,7 +659,7 @@ public class InvestmentService
         };
     }
 
-    private void DisplayComparison(List<SimulationResult> results)
+    private void DisplayComparison(List<InvestmentSimulation> results)
     {
         Console.WriteLine();
 
@@ -660,7 +687,7 @@ public class InvestmentService
 
         int position = 1;
 
-        foreach (SimulationResult result in results)
+        foreach (InvestmentSimulation result in results)
         {
             string medal = position switch
             {
@@ -706,7 +733,7 @@ public class InvestmentService
     }
 
     private string GetRecommendationReason(
-        SimulationResult investment,
+        InvestmentSimulation investment,
         InvestorProfile profile)
     {
         return (profile, investment.InvestmentType) switch
@@ -766,11 +793,11 @@ public class InvestmentService
     }
 
     private void DisplayRecommendation(
-        List<SimulationResult> results,
-        SimulationResult selectedInvestment,
+        List<InvestmentSimulation> results,
+        InvestmentSimulation selectedInvestment,
         InvestorProfile profile)
     {
-        SimulationResult bestInvestment = profile switch
+        InvestmentSimulation bestInvestment = profile switch
         {
             InvestorProfile.EmergencyLiquidity =>
                 results.First(r => r.InvestmentType == InvestmentType.TreasurySelic),
@@ -838,14 +865,15 @@ public class InvestmentService
 
     private void AddTransaction(
         BankAccount account,
-        string type,
+        TransactionType type,
         decimal amount,
         string description,
         bool isCredit)
     {
         account.Transactions.Add(new Transaction
         {
-            Date = DateTime.Now,
+            BankAccountId = account.Id,
+            BankAccount = account,
             Type = type,
             Amount = amount,
             Description = description,

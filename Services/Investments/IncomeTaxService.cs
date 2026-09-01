@@ -16,7 +16,7 @@ public class IncomeTaxService
     }
     public void Calculate(BankAccount account)
     {
-        if (!account.Investments.Any())
+        if (!account.Investments.Any(investment => investment.Status == InvestmentStatus.Active))
         {
             Console.WriteLine("\nYou have no investments available.");
             Thread.Sleep(3000);
@@ -30,7 +30,8 @@ public class IncomeTaxService
     decimal totalTax = 0;
     decimal totalNetValue = 0;
 
-    foreach (Investment investment in account.Investments)
+    foreach (Investment investment in account.Investments
+                .Where(investment => investment.Status == InvestmentStatus.Active))
     {
         decimal currentValue = _investmentService.CalculateCurrentValue(investment);
         decimal profit = currentValue - investment.RemainingAmount;

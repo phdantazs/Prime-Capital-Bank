@@ -74,7 +74,7 @@ while (true)
 
 }
 
-//********** CREATE ACCOUNT **********
+//CREATE ACCOUNT
 public void CreateAccount()
 {
     Console.Clear();
@@ -97,13 +97,9 @@ public void CreateAccount()
 
     Customer? customer = _customerService.FindCustomerById(idNumber);
 
-    string pin;
-
     // Se o cliente ainda não existir, cria um novo
     if (customer == null)
     {
-        pin = _authenticationService.CreatePin();
-
         customer = new Customer
         {
             Name = fullName,
@@ -112,12 +108,11 @@ public void CreateAccount()
             MonthlyIncome = monthlyIncome,
         };
 
+        string pin = _authenticationService.CreatePin();
+        customer.PinHash = _authenticationService.HashPin(customer, pin);
+
         customers.Add(customer);
     }
-        else
-        {
-            pin = customer.Accounts.First().Pin;
-        }
 
     Console.WriteLine("\nChoose the account type:\n");
     Console.WriteLine("1 - Checking");
@@ -154,7 +149,6 @@ public void CreateAccount()
     }
 
     BankAccount account = _accountService.CreateAccount(accountType);
-    account.Pin = pin;
     account.Owner = customer;
     
     customer.Accounts.Add(account);
@@ -431,7 +425,6 @@ private void OpenInvestmentMenu(BankAccount account)
                 {
                     case 1:
                         _bitcoinService.OpenBitcoinAccount(account);
-                        Thread.Sleep(3000);
                         break;
 
                     case 2:
@@ -440,26 +433,66 @@ private void OpenInvestmentMenu(BankAccount account)
                         return;
                 }
             }
-            else
+
+            else if (account.BitcoinWallet.Status == BitcoinWalletStatus.Closed)
             {
                 Console.Clear();
 
-                Console.WriteLine("Your Bitcoin account is active!\n");
-                Console.WriteLine($"Bitcoin balance: {account.BitcoinWallet.Balance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
+                Console.WriteLine("Your Bitcoin account is closed.\n");
 
-                Console.WriteLine("\n1 - Buy Bitcoin");
-                Console.WriteLine("2 - Sell Bitcoin");
-                Console.WriteLine("3 - My Wallet");
-                Console.WriteLine("4 - Bitcoin Price");
-                Console.WriteLine("5 - Bitcoin Transactions");
-                Console.WriteLine("6 - Close Bitcoin Account");
-                Console.WriteLine("7 - Back");
+                Console.WriteLine("1 - Reopen Bitcoin account");
+                Console.WriteLine("2 - My Wallet");
+                Console.WriteLine("3 - Bitcoin price");
+                Console.WriteLine("4 - Bitcoin Transactions");
+                Console.WriteLine("5 - Back");
 
                 Console.Write("\nOption: ");
 
-                int option = _inputService.ReadMenuOption(1, 7);
+                int option = _inputService.ReadMenuOption(1, 5);
 
                 switch (option)
+                {
+                    case 1:
+                        _bitcoinService.OpenBitcoinAccount(account);
+                        break;
+
+                    case 2:
+                        _bitcoinService.ShowBitcoinWallet(account);
+                        break;
+                    
+                    case 3:
+                        _bitcoinService.ShowBitcoinPrice();
+                        break;
+
+                    case 4:
+                        _bitcoinService.ShowBitcoinTransactions(account);
+                        break;
+                    
+                    case 5:
+                        Console.Clear();
+                        return;
+                }
+            }
+
+                else
+                {
+                    Console.WriteLine("Your Bitcoin account is active!\n");
+
+                    Console.WriteLine($"Bitcoin balance: {account.BitcoinWallet.Balance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
+
+                    Console.WriteLine("\n1 - Buy Bitcoin");
+                    Console.WriteLine("2 - Sell Bitcoin");
+                    Console.WriteLine("3 - My Wallet");
+                    Console.WriteLine("4 - Bitcoin Price");
+                    Console.WriteLine("5 - Bitcoin Transactions");
+                    Console.WriteLine("6 - Close Bitcoin Account");
+                    Console.WriteLine("7 - Back");
+
+                    Console.Write("\nOption: ");
+
+                    int option = _inputService.ReadMenuOption(1, 7);
+
+                    switch (option)
                 {
                     case 1:
                         _bitcoinService.BuyBitcoin(account);

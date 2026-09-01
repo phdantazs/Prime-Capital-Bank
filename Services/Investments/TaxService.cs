@@ -14,7 +14,7 @@ public class TaxService
         return 0m;
         }
 
-        int days = (DateTime.Now - investment.InvestedAt).Days;
+        int days = (DateTime.UtcNow - investment.InvestedAt).Days;
         //Valores com base na tabela regressiva de IR para renda fixa
         if (days <= 180)
             return 0.225m;

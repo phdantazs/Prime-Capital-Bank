@@ -1,12 +1,16 @@
+using Microsoft.AspNetCore.Identity;
 using PrimeCapitalBank.Models;
+
 namespace PrimeCapitalBank.Services.Core;
 public class AuthenticationService
 
 {
     private readonly InputService _inputService;
+    private readonly PasswordHasher<Customer> _passwordHasher;
     public AuthenticationService(InputService inputService)
     {   
         _inputService = inputService;
+        _passwordHasher = new PasswordHasher<Customer>();
     }
     public string CreatePin(string? currentPin = null)
     {
@@ -31,14 +35,19 @@ public class AuthenticationService
         }
     }
 
+    public string HashPin(Customer customer, string pin)
+    {
+        return _passwordHasher.HashPassword(customer, pin);
+    }
+
     public bool Authenticate(BankAccount account, string pin)
     {
         // Verifica se a conta está bloqueada
         if (account.BlockedUntil.HasValue)
     {
-        if (DateTime.Now < account.BlockedUntil.Value)
+        if (DateTime.UtcNow < account.BlockedUntil.Value)
         {
-            TimeSpan remaining = account.BlockedUntil.Value - DateTime.Now;
+            TimeSpan remaining = account.BlockedUntil.Value - DateTime.UtcNow;
 
             Console.WriteLine($"\nThis account is temporarily blocked. Try again in {remaining.Minutes:D2}:{remaining.Seconds:D2}.");
 
@@ -50,15 +59,21 @@ public class AuthenticationService
         account.FailedLoginAttempts = 0;
     }
 
+    PasswordVerificationResult result = 
+        _passwordHasher.VerifyHashedPassword(
+                account.Owner,
+                account.Owner.PinHash,
+                pin);
+
     // Validate the PIN
 
-    if (account.Pin != pin)
+    if (result == PasswordVerificationResult.Failed)
     {
         account.FailedLoginAttempts++;
         
         if (account.FailedLoginAttempts >= 3)
             {
-                account.BlockedUntil = DateTime.Now.AddMinutes(2);
+                account.BlockedUntil = DateTime.UtcNow.AddMinutes(2);
                 Console.WriteLine("\nYour account has been temporarily blocked for 2 minutes.");
             }
 
@@ -72,8 +87,8 @@ public class AuthenticationService
         return false;
     }
 
-    // Successful login
     account.FailedLoginAttempts = 0;
+    account.BlockedUntil = null;
 
     return true;
     }
@@ -85,7 +100,13 @@ public class AuthenticationService
 
         Console.WriteLine();
 
-        if (customer.Accounts.First().Pin != currentPin)
+        PasswordVerificationResult result =
+            _passwordHasher.VerifyHashedPassword(
+                customer,
+                customer.PinHash,
+                currentPin);
+
+        if (result == PasswordVerificationResult.Failed)
         {
             Console.WriteLine("\nCurrent PIN is incorrect.");
             return;
@@ -93,10 +114,7 @@ public class AuthenticationService
 
         string newPin = CreatePin(currentPin);
 
-        foreach (BankAccount account in customer.Accounts)
-        {
-            account.Pin = newPin;
-        }
+        customer.PinHash = HashPin(customer, newPin);
 
         Console.WriteLine("\nPIN changed successfully!");
     }

@@ -31,7 +31,7 @@ public class AccountService
             AccountType = accountType,
             AccountNumber = GenerateAccountNumber(accountType),
             Balance = 0,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
     }
 
@@ -48,7 +48,9 @@ public void Deposit(BankAccount account, decimal amount)
 
         account.Transactions.Add(new Transaction
         {
-            Type = "Deposit",
+            BankAccountId = account.Id,
+            BankAccount = account,
+            Type = TransactionType.Deposit,
             Amount = amount,
             Description = "Cash deposit",
             IsCredit = true
@@ -84,7 +86,9 @@ public void Withdraw(BankAccount account, decimal amount)
 
      account.Transactions.Add(new Transaction
         {
-            Type = "Withdrawal",
+            BankAccountId = account.Id,
+            BankAccount = account,
+            Type = TransactionType.Withdrawal,
             Amount = amount,
             Description = "Cash withdrawal",
             IsCredit = false
@@ -117,7 +121,9 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
 
         originAccount.Transactions.Add(new Transaction
         {
-            Type = "Transfer",
+            BankAccountId = originAccount.Id,
+            BankAccount = originAccount,
+            Type = TransactionType.Transfer,
             Amount = amount,
             Description = $"Transfer to {destinationAccount.Owner.Name} ({destinationAccount.AccountNumber})",
             IsCredit = false
@@ -125,7 +131,9 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
 
         destinationAccount.Transactions.Add(new Transaction
         {
-            Type = "Transfer",
+            BankAccountId = destinationAccount.Id,
+            BankAccount = destinationAccount,
+            Type = TransactionType.Transfer,
             Amount = amount,
             Description = $"Transfer received from {originAccount.Owner.Name} ({originAccount.AccountNumber})",
             IsCredit = true
@@ -167,12 +175,12 @@ public void Statement(BankAccount account)
             string signal = transaction.IsCredit ? "+" : "-";
 
             Console.WriteLine(
-                $"{transaction.Date:dd/MM/yyyy HH:mm} | " +
+                $"{transaction.CreatedAt:dd/MM/yyyy HH:mm} | " +
                 $"{transaction.Type, -25} | " +
                 $"{transaction.Description, -70} | " + 
                 $"{signal} R$ {transaction.Amount,12:N2}");
 
-                Console.WriteLine($"\nTransaction ID: {transaction.TransactionId}\n");
+                Console.WriteLine($"\nTransaction ID: {transaction.Id}\n");
         }
     }
 
