@@ -83,9 +83,8 @@ public class InvestmentService
             Type = type,
             InvestmentAmount = amount,
             RemainingAmount = amount,
-            CurrentValue = amount,
             AnnualRate = annualRate,
-            InvestedAt = DateTime.UtcNow,
+            InvestedAt = DateTime.UtcNow.AddDays(-211),
             Status = InvestmentStatus.Active
         };
     }
@@ -107,13 +106,11 @@ public class InvestmentService
 
         Console.WriteLine("========== REDEEM INVESTMENT ==========\n");
 
-        for (int i = 0; i < account.Investments.Count; i++)
+        for (int i = 0; i < activeInvestments.Count; i++)
         {
             Investment investment = activeInvestments[i];
 
             decimal currentValue = CalculateCurrentValue(investment);
-
-            investment.CurrentValue = currentValue;
 
             decimal profit = currentValue - investment.RemainingAmount;
 
@@ -138,12 +135,9 @@ public class InvestmentService
         int option = _inputService.ReadMenuOption(1, activeInvestments.Count);
         Investment selectedInvestment = activeInvestments[option - 1];
 
-        //Atualiza o valor atual do investimento
-        selectedInvestment.CurrentValue = CalculateCurrentValue(selectedInvestment);
+        decimal availableAmount = CalculateCurrentValue(selectedInvestment);
 
-        decimal availableAmount = selectedInvestment.CurrentValue;
-
-        decimal currentProfit = selectedInvestment.CurrentValue - selectedInvestment.RemainingAmount;
+        decimal currentProfit = availableAmount - selectedInvestment.RemainingAmount;
 
         decimal profitabilityPercentage = 
             selectedInvestment.RemainingAmount > 0
@@ -157,7 +151,7 @@ public class InvestmentService
         Console.WriteLine($"Investment: {selectedInvestment.Type}");
         Console.WriteLine($"Initial investment: {selectedInvestment.InvestmentAmount:C}");
         Console.WriteLine($"Current invested amount: {selectedInvestment.RemainingAmount:C}");
-        Console.WriteLine($"Current value: {selectedInvestment.CurrentValue:C}");
+        Console.WriteLine($"Current value: {availableAmount:C}");
         Console.WriteLine($"Profit: {currentProfit:C}");
         Console.WriteLine($"Return: {profitabilityPercentage:F2}%");
         Console.WriteLine($"Annual rate: {selectedInvestment.AnnualRate:P2}");
@@ -175,6 +169,8 @@ public class InvestmentService
             return;
         }
 
+        bool isFullRedemption = redemptionValue == availableAmount;
+
         decimal redemptionPercentage = redemptionValue / availableAmount;
 
         decimal redeemedPrincipal = selectedInvestment.RemainingAmount * redemptionPercentage;
@@ -183,16 +179,22 @@ public class InvestmentService
 
         decimal taxRate = _taxService.GetTaxRate(selectedInvestment);
 
-        decimal incomeTax =
+        decimal incomeTax = Math.Round(
             _taxService.CalculateIncomeTax(
                 redeemedProfit,
-                selectedInvestment);
+                selectedInvestment),
 
-        decimal netRedemption = redemptionValue - incomeTax;
+            2,
+            MidpointRounding.AwayFromZero);
+
+        decimal netRedemption = Math.Round(
+            redemptionValue - incomeTax,
+            2,
+            MidpointRounding.AwayFromZero);
 
         Console.WriteLine("\n========== REDEMPTION SUMMARY ==========\n");
 
-        Console.WriteLine($"Requeseted redemption: {redemptionValue:C}");
+        Console.WriteLine($"Requested redemption: {redemptionValue:C}");
         Console.WriteLine($"Principal redeemed: {redeemedPrincipal:C}");
         Console.WriteLine($"Profit redeemed: {redeemedProfit:C}");
         Console.WriteLine($"Income tax rate: {taxRate:P1}");
@@ -235,17 +237,13 @@ public class InvestmentService
             NetAmount = netRedemption
         };
 
-        selectedInvestment.CurrentValue -= redemptionValue;
+        selectedInvestment.Redemptions.Add(redemption);
+
         selectedInvestment.RemainingAmount -= redeemedPrincipal;
 
-        if (selectedInvestment.CurrentValue < 0.01m)
-            selectedInvestment.CurrentValue = 0;
-
-        if (selectedInvestment.RemainingAmount < 0.01m)
-            selectedInvestment.RemainingAmount = 0;
-
-        if (selectedInvestment.CurrentValue == 0)
+        if (isFullRedemption)
         {
+            selectedInvestment.RemainingAmount = 0;
             selectedInvestment.Status = InvestmentStatus.Redeemed;
             selectedInvestment.RedeemedAt = DateTime.UtcNow;
         }
@@ -254,7 +252,7 @@ public class InvestmentService
         Console.WriteLine("\nInvestment redeemed successfully!");
         Console.WriteLine($"\nGross redemption: {redemptionValue:C}");
         Console.WriteLine($"Income tax: {incomeTax:C}");
-        Console.WriteLine($"Net amount credited: R$ {netRedemption:C}");
+        Console.WriteLine($"Net amount credited: {netRedemption:C}");
         Console.WriteLine("\n======================================");
 
         Thread.Sleep(7000);
@@ -282,9 +280,9 @@ public class InvestmentService
 
         foreach (Investment investment in activeInvestments)
         {
-            investment.CurrentValue = CalculateCurrentValue(investment);
+            decimal currentValue = CalculateCurrentValue(investment);
 
-            decimal profit = investment.CurrentValue - investment.RemainingAmount;
+            decimal profit = currentValue - investment.RemainingAmount;
 
             decimal profitability = 
                 investment.RemainingAmount > 0
@@ -292,13 +290,13 @@ public class InvestmentService
                     : 0;
 
             totalInvested += investment.RemainingAmount;
-            totalCurrentValue += investment.CurrentValue;
+            totalCurrentValue += currentValue;
             totalProfit += profit;
 
             Console.WriteLine($"Investment: {investment.Type}");
             Console.WriteLine($"Initial investment: {investment.InvestmentAmount:C}");
             Console.WriteLine($"Current invested amount: {investment.RemainingAmount:C}");
-            Console.WriteLine($"Current value: {investment.CurrentValue:C}");
+            Console.WriteLine($"Current value: {currentValue:C}");
             Console.WriteLine($"Profit: {profit:C}");
             Console.WriteLine($"Return: {profitability:F2}%");
             Console.WriteLine($"Annual rate: {investment.AnnualRate:P2}");
@@ -322,9 +320,14 @@ public class InvestmentService
     }
     public decimal CalculateCurrentValue(Investment investment)
     {
-        int days = (DateTime.UtcNow - investment.InvestedAt).Days;
+        if (investment.RemainingAmount <= 0)
+            return 0;
 
-        decimal dailyRate =
+        int days = Math.Max(
+            0,
+            (DateTime.UtcNow - investment.InvestedAt).Days);
+
+        decimal dailyRate = 
             (decimal)Math.Pow(
                 (double)(1 + investment.AnnualRate),
                 1.0 / 365.0) - 1;
@@ -334,7 +337,7 @@ public class InvestmentService
             (decimal)Math.Pow(
                 (double)(1 + dailyRate),
                 days);
-            
+
         return Math.Round(currentValue, 2);
     }
     public void SimulateInvestment(BankAccount account)

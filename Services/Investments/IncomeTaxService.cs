@@ -37,10 +37,12 @@ public class IncomeTaxService
         decimal profit = currentValue - investment.RemainingAmount;
         
         decimal taxRate = _taxService.GetTaxRate(investment);
-        decimal tax = 
+        decimal tax = Math.Round(
             _taxService.CalculateIncomeTax(
                 profit,
-                investment);
+                investment),
+            2,
+            MidpointRounding.AwayFromZero);
 
         decimal netValue = currentValue - tax;
 
@@ -48,7 +50,7 @@ public class IncomeTaxService
         totalNetValue += netValue;
 
         Console.WriteLine($"Investment: {investment.Type}");
-        Console.WriteLine($"Invested amount: R$ {investment.InvestmentAmount:C}");
+        Console.WriteLine($"Invested amount: {investment.RemainingAmount:C}");
         Console.WriteLine($"Current value: {currentValue:C}");
         Console.WriteLine($"Profit: {profit:C}");
         Console.WriteLine($"Income tax rate: {taxRate:P1}");
