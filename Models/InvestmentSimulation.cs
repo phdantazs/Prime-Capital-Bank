@@ -5,8 +5,11 @@ namespace PrimeCapitalBank.Models;
 public class InvestmentSimulation
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public int CustomerId { get; set; }
+    public string SimulationCode { get; set; } = string.Empty;
+
+    public Guid CustomerId { get; set; }
     public Customer Customer { get; set; } = null!;
+    
     public InvestmentType InvestmentType { get; set; }
     public decimal InitialInvestment { get; set; }
     public decimal ContributionAmount { get; set; }
