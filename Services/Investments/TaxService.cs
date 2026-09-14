@@ -11,10 +11,13 @@ public class TaxService
         if (investment.Type == InvestmentType.LCI ||
             investment.Type == InvestmentType.LCA)
         {
-        return 0m;
+            return 0m;
         }
 
-        int days = (DateTime.UtcNow - investment.InvestedAt).Days;
+        int days = Math.Max(
+            0,
+            (DateTime.UtcNow - investment.InvestedAt).Days);
+
         //Valores com base na tabela regressiva de IR para renda fixa
         if (days <= 180)
             return 0.225m;

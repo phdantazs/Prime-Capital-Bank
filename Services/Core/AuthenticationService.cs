@@ -19,7 +19,7 @@ public class AuthenticationService
             Console.WriteLine("Create a 6-digit PIN: ");
             string pin = _inputService.ReadPin();
 
-            if (currentPin != null && pin == currentPin)
+            if (currentPin is not null && pin == currentPin)
             {
                 Console.WriteLine("\nThe new PIN cannot be the same as the current PIN.\n");
                 continue;
@@ -40,14 +40,14 @@ public class AuthenticationService
         return _passwordHasher.HashPassword(customer, pin);
     }
 
-    public bool Authenticate(BankAccount account, string pin)
+    public bool Authenticate(Customer customer, string pin)
     {
         // Verifica se a conta está bloqueada
-        if (account.BlockedUntil.HasValue)
+        if (customer.BlockedUntil.HasValue)
     {
-        if (DateTime.UtcNow < account.BlockedUntil.Value)
+        if (DateTime.UtcNow < customer.BlockedUntil.Value)
         {
-            TimeSpan remaining = account.BlockedUntil.Value - DateTime.UtcNow;
+            TimeSpan remaining = customer.BlockedUntil.Value - DateTime.UtcNow;
 
             Console.WriteLine($"\nThis account is temporarily blocked. Try again in {remaining.Minutes:D2}:{remaining.Seconds:D2}.");
 
@@ -55,31 +55,31 @@ public class AuthenticationService
         }
 
         // Unblock the account automatically
-        account.BlockedUntil = null;
-        account.FailedLoginAttempts = 0;
+        customer.BlockedUntil = null;
+        customer.FailedLoginAttempts = 0;
     }
 
     PasswordVerificationResult result = 
         _passwordHasher.VerifyHashedPassword(
-                account.Owner,
-                account.Owner.PinHash,
+                customer,
+                customer.PinHash,
                 pin);
 
     // Validate the PIN
 
     if (result == PasswordVerificationResult.Failed)
     {
-        account.FailedLoginAttempts++;
+        customer.FailedLoginAttempts++;
         
-        if (account.FailedLoginAttempts >= 3)
+        if (customer.FailedLoginAttempts >= 3)
             {
-                account.BlockedUntil = DateTime.UtcNow.AddMinutes(2);
+                customer.BlockedUntil = DateTime.UtcNow.AddMinutes(2);
                 Console.WriteLine("\nYour account has been temporarily blocked for 2 minutes.");
             }
 
             else
             {
-                int remainingAttempts = 3 - account.FailedLoginAttempts;
+                int remainingAttempts = 3 - customer.FailedLoginAttempts;
 
                 Console.WriteLine($"\nInvalid PIN, {remainingAttempts} attempt(s) remaining");
             }
@@ -87,8 +87,8 @@ public class AuthenticationService
         return false;
     }
 
-    account.FailedLoginAttempts = 0;
-    account.BlockedUntil = null;
+    customer.FailedLoginAttempts = 0;
+    customer.BlockedUntil = null;
 
     return true;
     }

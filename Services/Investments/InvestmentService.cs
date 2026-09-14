@@ -1,6 +1,7 @@
 using System.Linq;
 using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Models.Enums;
+using PrimeCapitalBank.Utils;
 
 namespace PrimeCapitalBank.Services.Investments;
 
@@ -84,7 +85,7 @@ public class InvestmentService
             InvestmentAmount = amount,
             RemainingAmount = amount,
             AnnualRate = annualRate,
-            InvestedAt = DateTime.UtcNow.AddDays(-211),
+            InvestedAt = DateTime.UtcNow,
             Status = InvestmentStatus.Active
         };
     }
@@ -125,7 +126,7 @@ public class InvestmentService
             Console.WriteLine($"Profit: {profit:C}");
             Console.WriteLine($"Return: {profitPercentage:F2}%");
             Console.WriteLine($"Annual rate: {investment.AnnualRate:P2}");
-            Console.WriteLine($"Invested since: {investment.InvestedAt:d}");
+            Console.WriteLine($"Invested since: {investment.InvestedAt:dd/MM/yyyy}");
             Console.WriteLine("---------------------------------------");
             Console.WriteLine();
         }
@@ -155,7 +156,7 @@ public class InvestmentService
         Console.WriteLine($"Profit: {currentProfit:C}");
         Console.WriteLine($"Return: {profitabilityPercentage:F2}%");
         Console.WriteLine($"Annual rate: {selectedInvestment.AnnualRate:P2}");
-        Console.WriteLine($"Invested since: {selectedInvestment.InvestedAt: dd/MM/yyyy}");
+        Console.WriteLine($"Invested since: {selectedInvestment.InvestedAt:dd/MM/yyyy}");
 
         Console.WriteLine($"\nAvailable redemption: {availableAmount:N2}");
 
@@ -173,24 +174,19 @@ public class InvestmentService
 
         decimal redemptionPercentage = redemptionValue / availableAmount;
 
-        decimal redeemedPrincipal = selectedInvestment.RemainingAmount * redemptionPercentage;
+        decimal redeemedPrincipal = PrecisionHelper.TruncateBrl(selectedInvestment.RemainingAmount * redemptionPercentage);
 
         decimal redeemedProfit = redemptionValue - redeemedPrincipal;
 
         decimal taxRate = _taxService.GetTaxRate(selectedInvestment);
 
-        decimal incomeTax = Math.Round(
-            _taxService.CalculateIncomeTax(
-                redeemedProfit,
-                selectedInvestment),
+        decimal incomeTax = 
+            PrecisionHelper.TruncateBrl(
+                _taxService.CalculateIncomeTax(
+                    redeemedProfit,
+                    selectedInvestment));
 
-            2,
-            MidpointRounding.AwayFromZero);
-
-        decimal netRedemption = Math.Round(
-            redemptionValue - incomeTax,
-            2,
-            MidpointRounding.AwayFromZero);
+        decimal netRedemption = redemptionValue - incomeTax;
 
         Console.WriteLine("\n========== REDEMPTION SUMMARY ==========\n");
 
@@ -229,6 +225,8 @@ public class InvestmentService
         {
             InvestmentId = selectedInvestment.Id,
             Investment = selectedInvestment,
+            BankTransactionId = redemptionTransaction.Id,
+            BankTransaction = redemptionTransaction,
             GrossAmount = redemptionValue,
             PrincipalAmount = redeemedPrincipal,
             ProfitAmount = redeemedProfit,
@@ -239,7 +237,9 @@ public class InvestmentService
 
         selectedInvestment.Redemptions.Add(redemption);
 
-        selectedInvestment.RemainingAmount -= redeemedPrincipal;
+        selectedInvestment.RemainingAmount = 
+            PrecisionHelper.TruncateBrl(
+                selectedInvestment.RemainingAmount - redeemedPrincipal);
 
         if (isFullRedemption)
         {
@@ -338,9 +338,9 @@ public class InvestmentService
                 (double)(1 + dailyRate),
                 days);
 
-        return Math.Round(currentValue, 2);
+        return PrecisionHelper.TruncateBrl(currentValue);
     }
-    public void SimulateInvestment(BankAccount account)
+    public void SimulateInvestment(Customer customer)
     {
         Console.Clear();
 
@@ -348,7 +348,12 @@ public class InvestmentService
 
         InvestmentSimulation result = BuildSimulation();
 
+        result.CustomerId = customer.Id;
+        result.Customer = customer;
+
         result = CalculateSimulation(result);
+
+        customer.Simulations.Add(result);
 
         DisplaySimulation(result);
 
@@ -389,58 +394,77 @@ public class InvestmentService
 
     private InvestmentSimulation BuildSimulation()
     {
-        InvestmentType investmentType = SelectInvestmentType();
+        while (true)
+        {
+            InvestmentType investmentType = SelectInvestmentType();
 
-        decimal annualRate = GetAnnualRate(investmentType);
-        decimal initialInvestment =
-            _inputService.ReadMoney("\nInitial investment amount: ");
+            decimal annualRate = GetAnnualRate(investmentType);
+            decimal initialInvestment =
+                _inputService.ReadMoney("\nInitial investment amount: ");
 
-        Console.WriteLine("\nRecurring contributions:");
+            Console.WriteLine("\nRecurring contributions:");
 
-        Console.WriteLine("\n1 - None");
-        Console.WriteLine("2 - Monthly");
-        Console.WriteLine("3 - Quarterly");
-        Console.WriteLine("4 - Semi-Annual");
-        Console.WriteLine("5 - Annual");
+            Console.WriteLine("\n1 - None");
+            Console.WriteLine("2 - Monthly");
+            Console.WriteLine("3 - Quarterly");
+            Console.WriteLine("4 - Semi-Annual");
+            Console.WriteLine("5 - Annual");
 
-        Console.Write("\nChoose an Option: ");
+            Console.Write("\nChoose an Option: ");
 
-        int frequencyOption = _inputService.ReadMenuOption(1, 5);
+            int frequencyOption = _inputService.ReadMenuOption(1, 5);
 
-        ContributionFrequency contributionFrequency =
-            frequencyOption switch
-            {
+            ContributionFrequency contributionFrequency =
+                frequencyOption switch
+                {
                 1 => ContributionFrequency.None,
                 2 => ContributionFrequency.Monthly,
                 3 => ContributionFrequency.Quarterly,
                 4 => ContributionFrequency.SemiAnnual,
                 5 => ContributionFrequency.Annual,
                 _ => ContributionFrequency.None
+                };
+
+            decimal contributionAmount = 0;
+
+            if (contributionFrequency != ContributionFrequency.None)
+            {
+                contributionAmount = 
+                    _inputService.ReadMoney("\nContribution amount: ");
+            }
+
+            if (contributionFrequency != ContributionFrequency.None && contributionAmount <= 0)
+            {
+                Console.WriteLine("\nThe recurring contribution must be greater than zero.");
+
+                Thread.Sleep(3000);
+                continue;
+            }
+
+            if (initialInvestment <= 0 && contributionAmount <= 0)
+            {
+                Console.WriteLine("\nThe simulation must have an initial investment or a recurring contribution.");
+
+                Thread.Sleep(3000);
+
+                return BuildSimulation();
+            }
+
+            Console.Write("\nInvestment period (1-30 years): ");
+
+            int years = _inputService.ReadMenuOption(1, 30);
+
+            return new InvestmentSimulation
+            {
+                InvestmentType = investmentType,
+                AnnualRate = annualRate,
+                InitialInvestment = initialInvestment,
+                ContributionAmount = contributionAmount,
+                ContributionFrequency = contributionFrequency,
+                Years = years
             };
-
-        decimal contributionAmount = 0;
-
-        if (contributionFrequency != ContributionFrequency.None)
-        {
-            contributionAmount = 
-                _inputService.ReadMoney("\nContribution amount: ");
         }
-
-        Console.Write("\nInvestment period (1-30 years): ");
-
-        int years = _inputService.ReadMenuOption(1, 30);
-
-        return new InvestmentSimulation
-        {
-            InvestmentType = investmentType,
-            AnnualRate = annualRate,
-            InitialInvestment = initialInvestment,
-            ContributionAmount = contributionAmount,
-            ContributionFrequency = contributionFrequency,
-            Years = years
-        };
     }
-
     private InvestmentSimulation CalculateSimulation(InvestmentSimulation result)
     {
         decimal balance = result.InitialInvestment;
@@ -502,23 +526,22 @@ public class InvestmentService
                     contribution.Amount *
                     CalculateCompoundGrowth(monthlyRate, monthsInvested);
 
-                decimal contribuitonProfit = contributionFutureValue - contribution.Amount;
+                decimal contributionProfit = contributionFutureValue - contribution.Amount;
 
-                if (contribuitonProfit <= 0)
+                if (contributionProfit <= 0)
                     continue;
 
                 decimal taxRate = GetSimulationTaxRate(monthsInvested);
 
-                incomeTax += contribuitonProfit * taxRate;
+                incomeTax += contributionProfit * taxRate;
             }
         }
 
         decimal netProfit = grossProfit - incomeTax;
-        decimal finalBalance = totalContributed + netProfit;
 
-        result.TotalContributed = Math.Round(totalContributed, 2);
-        result.FinalBalance = Math.Round(finalBalance, 2);
-        result.InterestEarned = Math.Round(netProfit, 2);
+        result.TotalContributed = PrecisionHelper.TruncateBrl(totalContributed);
+        result.InterestEarned = PrecisionHelper.TruncateBrl(netProfit);
+        result.FinalBalance = result.TotalContributed + result.InterestEarned;
 
         return result;
     }
@@ -642,7 +665,7 @@ public class InvestmentService
 
             InvestmentType.LCA => new InvestmentInfo
             {
-                 RiskLevel = "Low",
+                RiskLevel = "Low",
                 Liquidity = "At maturity",
                 Taxation = "Tax Exempt",
                 FgcProtection = "Yes - FGC Protection",
@@ -826,8 +849,8 @@ public class InvestmentService
         };
 
         string reason = GetRecommendationReason(
-        bestInvestment,
-        profile);
+            bestInvestment,
+            profile);
 
         Console.WriteLine();
         Console.WriteLine("========== RECOMMENDATION ==========\n");
@@ -862,7 +885,7 @@ public class InvestmentService
         {
             Console.WriteLine();
             Console.WriteLine(
-                "Your selected investment has the highest projected return.");
+                "Your selected investment has the same projected final balance as the recommendation.");
         }
     }   
 

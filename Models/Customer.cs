@@ -8,6 +8,8 @@ public class Customer
     public string IdNumber { get; set; } = string.Empty;
     public decimal MonthlyIncome { get; set; }
     public string PinHash { get; set; } = string.Empty;
+    public int FailedLoginAttempts { get; set; } = 0;
+    public DateTime? BlockedUntil { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public List<BankAccount> Accounts { get; set; } = new();

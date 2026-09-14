@@ -10,7 +10,7 @@ public class CustomerService
     {
         _customers = customers;
     }
-    public Customer? FindCustomerById(string idNumber)
+    public Customer? FindCustomerByIdNumber(string idNumber)
     {
         return _customers.FirstOrDefault(c => c.IdNumber == idNumber);
     }

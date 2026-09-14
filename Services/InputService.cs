@@ -1,4 +1,5 @@
 using System.Linq;
+using PrimeCapitalBank.Utils;
 
 namespace PrimeCapitalBank.Services;
 
@@ -86,34 +87,36 @@ public class InputService
             string birthDate = "";
         
             while (birthDate.Length < 8)
-        {
-            ConsoleKeyInfo key = Console.ReadKey(true);
-
-            if (key.Key == ConsoleKey.Backspace)
             {
-                if (birthDate.Length == 0)
-                    continue;
-                
-                birthDate = birthDate[..^1];
-                
-                Console.Write("\b \b");
+                ConsoleKeyInfo key = Console.ReadKey(true);
 
-                if (birthDate.Length == 2 || birthDate.Length == 4)
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (birthDate.Length == 0)
+                        continue;
+                
+                    birthDate = birthDate[..^1];
+                
+                    Console.Write("\b \b");
+
+                    if (birthDate.Length == 2 || birthDate.Length == 4)
                     {
                          Console.Write("\b \b");
                          continue;
                     }
-            }
+                }   
 
-            if (!char.IsDigit(key.KeyChar))
+                if (!char.IsDigit(key.KeyChar))
                 continue;
-            if (birthDate.Length == 2 || birthDate.Length == 4)
+
+                if (birthDate.Length == 2 || birthDate.Length == 4)
                 Console.Write("/");
 
-            birthDate += key.KeyChar;
-            Console.Write(key.KeyChar);
-        }
-        Console.WriteLine();
+                birthDate += key.KeyChar;
+                Console.Write(key.KeyChar);
+            }
+
+            Console.WriteLine();
 
             if (DateTime.TryParseExact(
                 birthDate,
@@ -121,12 +124,12 @@ public class InputService
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None,
                 out DateTime result))
-        {
-            return result;
-        }
+            {
+                return result;
+            }
 
-        Console.WriteLine("\nInvalid date. Please try again.\n");
-        Console.Write("What's your date of birth: ");   
+            Console.WriteLine("\nInvalid date. Please try again.\n");
+            Console.Write("What's your date of birth: ");   
         }
     }
 
@@ -164,7 +167,7 @@ public class InputService
                         DrawMoney(left, top, digits);
                     }
 
-                    continue;
+                continue;
             }
 
             {
@@ -312,9 +315,9 @@ public class InputService
             }
             if (i > 0)
             {
-            string pair = $"{words[i - 1].ToLower()} {words[i].ToLower()}";
+                string pair = $"{words[i - 1].ToLower()} {words[i].ToLower()}";
 
-            if (lowercasePairs.Contains(pair))
+                if (lowercasePairs.Contains(pair))
                 {
                     words[i - 1] = words[i - 1].ToLower();
                     words[i] = words[i].ToLower();
@@ -325,56 +328,56 @@ public class InputService
         return string.Join(" ", words);
     }
 
-private string FormatWord(string word)
-{
-    if (string.IsNullOrWhiteSpace(word))
+    private string FormatWord(string word)
+    {
+        if (string.IsNullOrWhiteSpace(word))
         {
             return word;
         }
-            //Trata nomes com hifen (Jean-Pierre)
-            if (word.Contains("-"))
+        //Trata nomes com hifen (Jean-Pierre)
+        if (word.Contains("-"))
+        {
+            string[] parts = word.Split('-');
+
+            for (int i = 0; i < parts.Length; i++)
             {
-                string[] parts = word.Split('-');
-
-                for (int i = 0; i < parts.Length; i++)
-                {
-                    parts[i] = FormatWord(parts[i]);
-                }
-
-                return string.Join("-", parts);
+                parts[i] = FormatWord(parts[i]);
             }
 
-            //Trata nomes com apóstrofo como O'Connor, D'Angelo
-            if (word.Contains("'"))
-            {
-                string[] parts = word.Split('\'');
-                if (parts.Length == 2)
-                {
-                    return $"{Capitalize(parts[0])}'{Capitalize(parts[1])}";
-                }
-            }
+            return string.Join("-", parts);
+        }
 
-            //Trata sobrenomes como McGregor, McGinn, McDonald
-            if (word.StartsWith("mc", StringComparison.OrdinalIgnoreCase) && word.Length > 2)
+        //Trata nomes com apóstrofo como O'Connor, D'Angelo
+        if (word.Contains("'"))
+        {
+            string[] parts = word.Split('\'');
+            if (parts.Length == 2)
             {
-                return "Mc" + char.ToUpper(word[2]) + word[3..].ToLower();
+                return $"{Capitalize(parts[0])}'{Capitalize(parts[1])}";
             }
+        }
 
-            //Trata sobrenomes como MacAllister, MacEntire, MacDonald
-            if (word.StartsWith("mac", StringComparison.OrdinalIgnoreCase) && word.Length > 3)
-            {
-                return "Mac" + char.ToUpper(word[3]) + word[4..].ToLower();
-            }
+        //Trata sobrenomes como McGregor, McGinn, McDonald
+        if (word.StartsWith("mc", StringComparison.OrdinalIgnoreCase) && word.Length > 2)
+        {
+            return "Mc" + char.ToUpper(word[2]) + word[3..].ToLower();
+        }
 
-            //Trata nomes como DuPont, DuPlessis, DuBois
-            if (word.StartsWith("du", StringComparison.OrdinalIgnoreCase) && word.Length > 2)
-            {
-                return "Du" + char.ToUpper(word[2]) + word[3..].ToLower();
-            }
+        //Trata sobrenomes como MacAllister, MacEntire, MacDonald
+        if (word.StartsWith("mac", StringComparison.OrdinalIgnoreCase) && word.Length > 3)
+        {
+            return "Mac" + char.ToUpper(word[3]) + word[4..].ToLower();
+        }
 
-            return Capitalize(word);
-}
-        private string Capitalize(string word)
+        //Trata nomes como DuPont, DuPlessis, DuBois
+        if (word.StartsWith("du", StringComparison.OrdinalIgnoreCase) && word.Length > 2)
+        {
+            return "Du" + char.ToUpper(word[2]) + word[3..].ToLower();
+        }
+
+        return Capitalize(word);
+    }
+    private string Capitalize(string word)
     {
         if (string.IsNullOrWhiteSpace(word))
         {
@@ -415,9 +418,10 @@ private string FormatWord(string word)
                 System.Globalization.CultureInfo.InvariantCulture,
                 out decimal value))
             {
-                decimal roundedValue = Math.Round(value, 8);
+                decimal truncatedValue = 
+                    PrecisionHelper.TruncateBitcoin(value);
 
-                if (value != roundedValue)
+                if (value != truncatedValue)
                 {
                     Console.WriteLine("\nBitcoin amount cannot have more than 8 decimal places.");
                     continue;

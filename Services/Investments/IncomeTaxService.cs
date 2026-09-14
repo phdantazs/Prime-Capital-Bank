@@ -1,5 +1,6 @@
 using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Models.Enums;
+using PrimeCapitalBank.Utils;
 
 namespace PrimeCapitalBank.Services.Investments;
 
@@ -25,45 +26,45 @@ public class IncomeTaxService
 
         Console.Clear();
 
-    Console.WriteLine("========== INCOME TAX CALCULATOR ==========\n");
+        Console.WriteLine("========== INCOME TAX CALCULATOR ==========\n");
 
-    decimal totalTax = 0;
-    decimal totalNetValue = 0;
+        decimal totalTax = 0;
+        decimal totalNetValue = 0;
 
-    foreach (Investment investment in account.Investments
+        foreach (Investment investment in account.Investments
                 .Where(investment => investment.Status == InvestmentStatus.Active))
-    {
-        decimal currentValue = _investmentService.CalculateCurrentValue(investment);
-        decimal profit = currentValue - investment.RemainingAmount;
+        {
+            decimal currentValue = _investmentService.CalculateCurrentValue(investment);
+            decimal profit = currentValue - investment.RemainingAmount;
         
-        decimal taxRate = _taxService.GetTaxRate(investment);
-        decimal tax = Math.Round(
-            _taxService.CalculateIncomeTax(
-                profit,
-                investment),
-            2,
-            MidpointRounding.AwayFromZero);
+            decimal taxRate = _taxService.GetTaxRate(investment);
 
-        decimal netValue = currentValue - tax;
+            decimal tax = 
+                PrecisionHelper.TruncateBrl(
+                    _taxService.CalculateIncomeTax(
+                    profit,
+                    investment));
 
-        totalTax += tax;
-        totalNetValue += netValue;
+            decimal netValue = currentValue - tax;
 
-        Console.WriteLine($"Investment: {investment.Type}");
-        Console.WriteLine($"Invested amount: {investment.RemainingAmount:C}");
-        Console.WriteLine($"Current value: {currentValue:C}");
-        Console.WriteLine($"Profit: {profit:C}");
-        Console.WriteLine($"Income tax rate: {taxRate:P1}");
-        Console.WriteLine($"Income tax: {tax:C}");
-        Console.WriteLine($"Net value after tax: {netValue:C}");
-        Console.WriteLine("--------------------------------------\n");
-    }
+            totalTax += tax;
+            totalNetValue += netValue;
 
-        Console.WriteLine("========== SUMMARY ==========");
-        Console.WriteLine($"\nTotal income tax: {totalTax:C}");
-        Console.WriteLine($"Total net redemption: {totalNetValue:C}");
+            Console.WriteLine($"Investment: {investment.Type}");
+            Console.WriteLine($"Invested amount: {investment.RemainingAmount:C}");
+            Console.WriteLine($"Current value: {currentValue:C}");
+            Console.WriteLine($"Profit: {profit:C}");
+            Console.WriteLine($"Income tax rate: {taxRate:P1}");
+            Console.WriteLine($"Income tax: {tax:C}");
+            Console.WriteLine($"Net value after tax: {netValue:C}");
+            Console.WriteLine("--------------------------------------\n");
+        }
 
-        Console.WriteLine("\nPress any key to continue...");
-        Console.ReadKey();
+            Console.WriteLine("========== SUMMARY ==========");
+            Console.WriteLine($"\nTotal income tax: {totalTax:C}");
+            Console.WriteLine($"Total net redemption: {totalNetValue:C}");
+
+            Console.WriteLine("\nPress any key to continue...");
+            Console.ReadKey();
     }
 }

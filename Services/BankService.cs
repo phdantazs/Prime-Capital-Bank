@@ -35,43 +35,42 @@ public void Start()
 
     Console.WriteLine("\nWelcome to Prime Capital Bank! How we can help you?");
 
-while (true)
-{
-    Console.WriteLine("\n============== MENU ==============");
-    Console.WriteLine("\n1 - Open an account.");
-    Console.WriteLine("2 - Sign In.");
-    Console.WriteLine("3 - Show Registered accounts.");
-    Console.WriteLine("4 - Exit\n");
-    
-    Console.Write("\nChoose an option: ");
-    
-    int option = _inputService.ReadMenuOption(1, 4);
-
-    switch (option)
+    while (true)
     {
-        case 1:
-            CreateAccount();
-            break;
+        Console.WriteLine("\n============== MENU ==============");
+        Console.WriteLine("\n1 - Open an account.");
+        Console.WriteLine("2 - Sign In.");
+        Console.WriteLine("3 - Show Registered accounts.");
+        Console.WriteLine("4 - Exit\n");
+    
+        Console.Write("\nChoose an option: ");
+    
+        int option = _inputService.ReadMenuOption(1, 4);
+
+        switch (option)
+        {
+            case 1:
+                CreateAccount();
+                break;
         
-        case 2:
-            SignIn();
-            break;
+            case 2:
+                SignIn();
+                break;
 
-        case 3:
-            ShowRegisteredAccounts();
-            break;
+            case 3:
+                ShowRegisteredAccounts();
+                break;
 
-        case 4:
-            Console.WriteLine("\nLeaving menu...");
-            Thread.Sleep(1500);
-            return;
+            case 4:
+                Console.WriteLine("\nLeaving menu...");
+                Thread.Sleep(1500);
+                return;
 
-        default:
-            Console.WriteLine("\nInvalid option.");
-            break;
+            default:
+                Console.WriteLine("\nInvalid option.");
+                break;
+        }
     }
-}
-
 }
 
 //CREATE ACCOUNT
@@ -95,7 +94,7 @@ public void CreateAccount()
     decimal monthlyIncome = _inputService.ReadMoney("Approximate monthly income: ");
     Console.WriteLine();
 
-    Customer? customer = _customerService.FindCustomerById(idNumber);
+    Customer? customer = _customerService.FindCustomerByIdNumber(idNumber);
 
     // Se o cliente ainda não existir, cria um novo
     if (customer == null)
@@ -149,6 +148,8 @@ public void CreateAccount()
     }
 
     BankAccount account = _accountService.CreateAccount(accountType);
+
+    account.CustomerId = customer.Id;
     account.Owner = customer;
     
     customer.Accounts.Add(account);
@@ -178,16 +179,16 @@ public void ShowRegisteredAccounts()
            return;
         }
 
-         Console.WriteLine("==================== REGISTERED CUSTOMERS ====================\n");
+        Console.WriteLine("==================== REGISTERED CUSTOMERS ====================\n");
 
-            foreach (Customer customer in customers)
-            {
-                Console.WriteLine($"Customer Name: {customer.Name}");
-                Console.WriteLine($"ID Number: {customer.IdNumber}");
-                Console.WriteLine($"Birth Date: {customer.BirthDate:dd/MM/yyyy}");
-                Console.WriteLine($"Monthly Income: {customer.MonthlyIncome:N2}");
+        foreach (Customer customer in customers)
+        {
+            Console.WriteLine($"Customer Name: {customer.Name}");
+            Console.WriteLine($"ID Number: {customer.IdNumber}");
+            Console.WriteLine($"Birth Date: {customer.BirthDate:dd/MM/yyyy}");
+            Console.WriteLine($"Monthly Income: {customer.MonthlyIncome:N2}");
 
-                foreach (BankAccount account in customer.Accounts)
+            foreach (BankAccount account in customer.Accounts)
             {
                 Console.WriteLine("----------------------------------------------\n");
                 Console.WriteLine("Accounts:");
@@ -198,10 +199,11 @@ public void ShowRegisteredAccounts()
                 Console.WriteLine("----------------------------------------------\n");
             }
 
-            }
-             Console.WriteLine("\nPress any key to return...");
-             Console.ReadKey();
-             Console.Clear();
+        }
+
+        Console.WriteLine("\nPress any key to return...");
+        Console.ReadKey();
+        Console.Clear();
     }
 
 //Sign In
@@ -245,11 +247,11 @@ public void SignIn()
         return;
     }
 
-    if (!_authenticationService.Authenticate(loggedAccount, pin))
-        {
-            Thread.Sleep(3000);
-            return;
-        }
+    if (!_authenticationService.Authenticate(loggedCustomer, pin))
+    {
+        Thread.Sleep(3000);
+        return;
+    }
     
     Console.Clear();
 
@@ -263,22 +265,22 @@ public void SignIn()
     Console.WriteLine($"Balance      : R${loggedAccount.Balance:N2}\n");
 
     while (true)
-        {
-            Console.WriteLine("========== ACCOUNT MENU ==========");
-            Console.WriteLine("\n1 - Deposit");
-            Console.WriteLine("\n2 - Withdraw");
-            Console.WriteLine("\n3 - Transfer");
-            Console.WriteLine("\n4 - Statement");
-            Console.WriteLine("\n5 - Investments");
-            Console.WriteLine("\n6 - Bitcoin");
-            Console.WriteLine("\n7 - Change PIN");
-            Console.WriteLine("\n8 - Logout\n");
+    {
+        Console.WriteLine("========== ACCOUNT MENU ==========");
+        Console.WriteLine("\n1 - Deposit");
+        Console.WriteLine("\n2 - Withdraw");
+        Console.WriteLine("\n3 - Transfer");
+        Console.WriteLine("\n4 - Statement");
+        Console.WriteLine("\n5 - Investments");
+        Console.WriteLine("\n6 - Bitcoin");
+        Console.WriteLine("\n7 - Change PIN");
+        Console.WriteLine("\n8 - Logout\n");
 
-            Console.Write("\nWhat you need?: ");
-            int option = _inputService.ReadMenuOption(1, 8);
+        Console.Write("\nWhat you need?: ");
+        int option = _inputService.ReadMenuOption(1, 8);
             
-            Console.WriteLine();
-            Console.WriteLine("============================\n");
+        Console.WriteLine();
+        Console.WriteLine("============================\n");
 
         switch (option)
         {
@@ -299,41 +301,41 @@ public void SignIn()
                 BankAccount? destinationAccount = null;
 
                 foreach (Customer customer in customers)
-                    {
-                        destinationAccount = customer.Accounts
-                            .FirstOrDefault(a => a.AccountNumber == destinationAccountNumber);
+                {
+                    destinationAccount = customer.Accounts
+                        .FirstOrDefault(a => a.AccountNumber == destinationAccountNumber);
 
-                            if (destinationAccount != null)
-                            break;
-                    }
-
-                    if (destinationAccount == null)
-                    {
-                        Console.WriteLine("\nDestination account not found.");
-                        Thread.Sleep(2000);
+                        if (destinationAccount != null)
                         break;
-                    }
+                }
+
+                if (destinationAccount == null)
+                {
+                    Console.WriteLine("\nDestination account not found.");
+                    Thread.Sleep(2000);
+                    break;
+                }
                     
-                    if (destinationAccount == loggedAccount)
-                    {
-                        Console.WriteLine("\nYou cannot transfer to your own account.");
-                        Thread.Sleep(2000);
-                        break;
-                    }
+                if (destinationAccount == loggedAccount)
+                {
+                    Console.WriteLine("\nYou cannot transfer to your own account.");
+                    Thread.Sleep(2000);
+                    break;
+                }
 
-                    decimal transferAmount = 
-                        _inputService.ReadMoney("\nTransfer amount: ");
+                decimal transferAmount = 
+                    _inputService.ReadMoney("\nTransfer amount: ");
 
                     _accountService.Transfer(loggedAccount, destinationAccount, transferAmount);
 
-                    break;
+                break;
 
             case 4:
                 _accountService.Statement(loggedAccount);
                 break;
 
             case 5:
-                OpenInvestmentMenu(loggedAccount);
+                OpenInvestmentMenu(loggedAccount, loggedCustomer);
                 break;
 
             case 6:
@@ -360,46 +362,46 @@ public void SignIn()
     }
 }
 
-private void OpenInvestmentMenu(BankAccount account)
+private void OpenInvestmentMenu(BankAccount account, Customer customer)
+{
+    while (true)
     {
-        while (true)
-        {
-            Console.Clear();
+        Console.Clear();
 
-            Console.WriteLine("========== INVESTMENTS ==========\n");
+        Console.WriteLine("========== INVESTMENTS ==========\n");
             
-            Console.WriteLine("1 - Invest");
-            Console.WriteLine("2 - My Portfolio");
-            Console.WriteLine("3 - Redeem Investment");
-            Console.WriteLine("4 - Investment Simulator");
-            Console.WriteLine("5 - Back");
+        Console.WriteLine("1 - Invest");
+        Console.WriteLine("2 - My Portfolio");
+        Console.WriteLine("3 - Redeem Investment");
+        Console.WriteLine("4 - Investment Simulator");
+        Console.WriteLine("5 - Back");
 
-            Console.Write("\nOption: ");
-            int option = _inputService.ReadMenuOption(1, 5);
+        Console.Write("\nOption: ");
+        int option = _inputService.ReadMenuOption(1, 5);
 
-            Console.WriteLine("\n========================\n");
+        Console.WriteLine("\n========================\n");
 
-            switch (option)
-            {
-                case 1:
-                    _investmentService.Invest(account);
-                    break;
+        switch (option)
+        {
+            case 1:
+                _investmentService.Invest(account);
+                break;
                 
-                case 2:
-                    _investmentService.ShowPortfolio(account);
-                    break;
+            case 2:
+                _investmentService.ShowPortfolio(account);
+                break;
 
-                case 3:
-                    _investmentService.Redeem(account);
-                    break;
+            case 3:
+                _investmentService.Redeem(account);
+                break;
 
-                case 4:
-                    _investmentService.SimulateInvestment(account);
-                    break;
+            case 4:
+                _investmentService.SimulateInvestment(customer);
+                break;
 
-                case 5:
-                    Console.Clear();
-                    return;
+            case 5:
+                Console.Clear();
+                return;
             }
         }
     }
@@ -473,26 +475,25 @@ private void OpenInvestmentMenu(BankAccount account)
                         return;
                 }
             }
+            else
+            {
+                Console.WriteLine("Your Bitcoin account is active!\n");
 
-                else
-                {
-                    Console.WriteLine("Your Bitcoin account is active!\n");
+                Console.WriteLine($"Bitcoin balance: {account.BitcoinWallet.Balance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
 
-                    Console.WriteLine($"Bitcoin balance: {account.BitcoinWallet.Balance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
+                Console.WriteLine("\n1 - Buy Bitcoin");
+                Console.WriteLine("2 - Sell Bitcoin");
+                Console.WriteLine("3 - My Wallet");
+                Console.WriteLine("4 - Bitcoin Price");
+                Console.WriteLine("5 - Bitcoin Transactions");
+                Console.WriteLine("6 - Close Bitcoin Account");
+                Console.WriteLine("7 - Back");
 
-                    Console.WriteLine("\n1 - Buy Bitcoin");
-                    Console.WriteLine("2 - Sell Bitcoin");
-                    Console.WriteLine("3 - My Wallet");
-                    Console.WriteLine("4 - Bitcoin Price");
-                    Console.WriteLine("5 - Bitcoin Transactions");
-                    Console.WriteLine("6 - Close Bitcoin Account");
-                    Console.WriteLine("7 - Back");
+                Console.Write("\nOption: ");
 
-                    Console.Write("\nOption: ");
+                int option = _inputService.ReadMenuOption(1, 7);
 
-                    int option = _inputService.ReadMenuOption(1, 7);
-
-                    switch (option)
+                switch (option)
                 {
                     case 1:
                         _bitcoinService.BuyBitcoin(account);

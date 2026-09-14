@@ -1,6 +1,7 @@
 using PrimeCapitalBank.Models;
 using PrimeCapitalBank.Services.Core;
 using PrimeCapitalBank.Models.Enums;
+using PrimeCapitalBank.Utils;
 using System.Globalization;
 
 namespace PrimeCapitalBank.Services.Bitcoin;
@@ -114,26 +115,22 @@ public class BitcoinService
             return;
         }
 
-        decimal bitcoinAmount = Math.Round(
-            amount / bitcoinPrice,
-            8,
-            MidpointRounding.ToZero);
+        decimal bitcoinAmount = 
+            PrecisionHelper.TruncateBitcoin(
+                amount / bitcoinPrice);
+
+        if (bitcoinAmount <= 0)
+        {
+            Console.WriteLine("\nThe amount is too small to purchase Bitcoin.");
+            Thread.Sleep(3000);
+            return;
+        }
 
         account.Balance -= amount;
 
         account.BitcoinWallet.Balance += bitcoinAmount;
 
-        account.BitcoinWallet.Transactions.Add(new BitcoinTransaction
-        {
-            BankAccountId = account.Id,
-            BitcoinWallet = account.BitcoinWallet,
-            Type = BitcoinTransactionType.Buy,
-            BitcoinAmount = bitcoinAmount,
-            BitcoinPrice = bitcoinPrice,
-            TotalAmount = amount
-        });
-
-        account.Transactions.Add(new Transaction
+        Transaction bankTransaction = new Transaction
         {
             BankAccountId = account.Id,
             BankAccount = account,
@@ -141,7 +138,23 @@ public class BitcoinService
             Amount = amount,
             Description = $"Purchase of {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)} BTC",
             IsCredit = false
-        });
+        };
+
+        account.Transactions.Add(bankTransaction);
+
+        BitcoinTransaction bitcoinTransaction = new BitcoinTransaction
+        {
+            BitcoinWalletId = account.BitcoinWallet.Id,
+            BitcoinWallet = account.BitcoinWallet,
+            BankTransactionId = bankTransaction.Id,
+            BankTransaction = bankTransaction,
+            Type = BitcoinTransactionType.Buy,
+            BitcoinAmount = bitcoinAmount,
+            BitcoinPrice = bitcoinPrice,
+            TotalAmount = amount
+        };
+
+        account.BitcoinWallet.Transactions.Add(bitcoinTransaction);
 
         Console.WriteLine("\n======================================");
         Console.WriteLine("\nBitcoin purchased successfully!");
@@ -177,7 +190,9 @@ public class BitcoinService
         Console.WriteLine($"Current Bitcoin price: R$ {bitcoinPrice:N2}");
 
        decimal bitcoinBalance = account.BitcoinWallet.Balance;
-       decimal availableValue = Math.Round(bitcoinBalance * bitcoinPrice, 2);
+       decimal availableValue = 
+            PrecisionHelper.TruncateBrl(
+                bitcoinBalance * bitcoinPrice);
 
        Console.WriteLine($"\nYour Bitcoin balance is: {bitcoinBalance.ToString("F8", CultureInfo.InvariantCulture)} BTC");
        Console.WriteLine($"\nAvailable value: R$ {availableValue:N2}");
@@ -214,8 +229,16 @@ public class BitcoinService
                 return;
             }
 
-            totalAmount = bitcoinAmount * bitcoinPrice;
-            totalAmount = Math.Round(totalAmount, 2);
+            totalAmount = 
+                PrecisionHelper.TruncateBrl(
+                    bitcoinAmount * bitcoinPrice);
+
+            if (totalAmount <= 0)
+            {
+                Console.WriteLine("\nThe Bitcoin amount is too small to generate a valid BRL sale.");
+                Thread.Sleep(3000);
+                return;
+            }
         }
 
         else
@@ -229,8 +252,6 @@ public class BitcoinService
                 return;
             }
 
-            totalAmount = Math.Round(totalAmount, 2);
-
             if (totalAmount > availableValue || bitcoinBalance <= 0)
             {
                 Console.WriteLine("\nInsufficient Bitcoin balance.");
@@ -241,15 +262,13 @@ public class BitcoinService
             if (totalAmount == availableValue)
             {
                 bitcoinAmount = bitcoinBalance;
-                totalAmount = Math.Round(bitcoinAmount * bitcoinPrice, 2);
             }
 
             else
             {
-                bitcoinAmount = Math.Round(
-                    totalAmount / bitcoinPrice,
-                    8,
-                    MidpointRounding.ToZero);
+                bitcoinAmount =
+                    PrecisionHelper.TruncateBitcoin(
+                        totalAmount / bitcoinPrice);
             } 
         }
 
@@ -270,27 +289,16 @@ public class BitcoinService
             return;
         }
 
-        account.BitcoinWallet.Balance -= bitcoinAmount;
-
         account.BitcoinWallet.Balance = 
-            Math.Round(account.BitcoinWallet.Balance, 8);
+            PrecisionHelper.TruncateBitcoin(
+                account.BitcoinWallet.Balance - bitcoinAmount);
         
         if (account.BitcoinWallet.Balance < 0)
             account.BitcoinWallet.Balance = 0m;
         
         account.Balance += totalAmount;
 
-        account.BitcoinWallet.Transactions.Add(new BitcoinTransaction
-        {
-            BankAccountId = account.Id,
-            BitcoinWallet = account.BitcoinWallet,
-            Type = BitcoinTransactionType.Sell,
-            BitcoinAmount = bitcoinAmount,
-            BitcoinPrice = bitcoinPrice,
-            TotalAmount = totalAmount
-        });
-
-        account.Transactions.Add(new Transaction
+        Transaction bankTransaction = new Transaction
         {
             BankAccountId = account.Id,
             BankAccount = account,
@@ -298,7 +306,23 @@ public class BitcoinService
             Amount = totalAmount,
             Description = $"Sale of {bitcoinAmount.ToString("F8", CultureInfo.InvariantCulture)} BTC",
             IsCredit = true
-        });
+        };
+
+        account.Transactions.Add(bankTransaction);
+
+        BitcoinTransaction bitcoinTransaction = new BitcoinTransaction
+        {
+            BitcoinWalletId = account.BitcoinWallet.Id,
+            BitcoinWallet = account.BitcoinWallet,
+            BankTransactionId = bankTransaction.Id,
+            BankTransaction = bankTransaction,
+            Type = BitcoinTransactionType.Sell,
+            BitcoinAmount = bitcoinAmount,
+            BitcoinPrice = bitcoinPrice,
+            TotalAmount = totalAmount
+        };
+
+        account.BitcoinWallet.Transactions.Add(bitcoinTransaction);
         
         Console.WriteLine("\n==============================================");
         Console.WriteLine("\nBitcoin sold successfully!");
@@ -321,9 +345,9 @@ public class BitcoinService
         decimal bitcoinPrice = GetBitcoinPrice();
         decimal bitcoinBalance = account.BitcoinWallet.Balance;
 
-        decimal walletValue = Math.Round(
-            bitcoinBalance * bitcoinPrice,
-            2);
+        decimal walletValue = 
+            PrecisionHelper.TruncateBrl(
+                bitcoinBalance * bitcoinPrice);
 
         decimal totalBought = account.BitcoinWallet.Transactions
             .Where(transaction => transaction.Type == BitcoinTransactionType.Buy)
@@ -386,8 +410,8 @@ public class BitcoinService
             Console.WriteLine($"Date: {transaction.CreatedAt:dd/MM/yyyy HH:mm:ss}");
             Console.WriteLine("----------------------------------\n");
         }
-            Console.WriteLine("Press ENTER to return.");
-            Console.ReadLine();
+        Console.WriteLine("Press ENTER to return.");
+        Console.ReadLine();
     }
 
     public void CloseBitcoinAccount(BankAccount account)

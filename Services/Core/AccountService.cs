@@ -5,15 +5,6 @@ namespace PrimeCapitalBank.Services.Core;
 
 public class AccountService
 {
-    private int _nextAccountNumber = 1001;
-    public string GenerateAccountNumber(AccountType accountType)
-    {
-        string suffix = accountType == AccountType.Checking ? "C" : "S";
-        string accountNumber = $"{_nextAccountNumber:D6}-{suffix}";
-        _nextAccountNumber++;
-
-        return accountNumber;
-    }
     public string GetAccountType(AccountType accountType)
     {
         return accountType switch
@@ -29,13 +20,12 @@ public class AccountService
         return new BankAccount
         {
             AccountType = accountType,
-            AccountNumber = GenerateAccountNumber(accountType),
-            Balance = 0,
+            Balance = 0m,
             CreatedAt = DateTime.UtcNow
         };
     }
 
-public void Deposit(BankAccount account, decimal amount)
+    public void Deposit(BankAccount account, decimal amount)
     {
         if (amount <= 0)
         {
@@ -109,6 +99,12 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
             Thread.Sleep(2000);
             return;
         }
+        if (originAccount.Id == destinationAccount.Id)
+        {
+            Console.WriteLine("\nThe origin and destination accounts must be different.");
+            Thread.Sleep(2000);
+            return;
+        }
         if (amount > originAccount.Balance)
         {
             Console.WriteLine("\nInsufficient balance.");
@@ -116,28 +112,47 @@ public void Transfer(BankAccount originAccount, BankAccount destinationAccount, 
             return;
         }
 
+        var transfer = new Transfer
+        {
+            SourceAccountId = originAccount.Id,
+            SourceAccount = originAccount,
+            DestinationAccountId = destinationAccount.Id,
+            DestinationAccount = destinationAccount,
+            Amount = amount
+        };
+
         originAccount.Balance -= amount;
         destinationAccount.Balance += amount; 
 
-        originAccount.Transactions.Add(new Transaction
+        var debitTransaction = new Transaction
         {
-            BankAccountId = originAccount.Id,
-            BankAccount = originAccount,
-            Type = TransactionType.Transfer,
-            Amount = amount,
-            Description = $"Transfer to {destinationAccount.Owner.Name} ({destinationAccount.AccountNumber})",
-            IsCredit = false
-        });
+          BankAccountId = originAccount.Id,
+          BankAccount = originAccount,
+          TransferId = transfer.Id,
+          Transfer = transfer,
+          Type = TransactionType.Transfer,
+          Amount = amount,
+          Description = $"Transfer to {destinationAccount.Owner.Name} ({destinationAccount.AccountNumber})",
+          IsCredit = false  
+        };
 
-        destinationAccount.Transactions.Add(new Transaction
+        var creditTransaction = new Transaction
         {
-            BankAccountId = destinationAccount.Id,
-            BankAccount = destinationAccount,
-            Type = TransactionType.Transfer,
-            Amount = amount,
-            Description = $"Transfer received from {originAccount.Owner.Name} ({originAccount.AccountNumber})",
-            IsCredit = true
-        });
+          BankAccountId = destinationAccount.Id,
+          BankAccount = destinationAccount,
+          TransferId = transfer.Id,
+          Transfer = transfer,
+          Type = TransactionType.Transfer,
+          Amount = amount,
+          Description = $"Transfer received from {originAccount.Owner.Name} ({originAccount.AccountNumber})",
+          IsCredit = true 
+        };
+
+        originAccount.Transactions.Add(debitTransaction);
+        destinationAccount.Transactions.Add(creditTransaction);
+
+        transfer.Transactions.Add(debitTransaction);
+        transfer.Transactions.Add(creditTransaction);
 
         Console.WriteLine("\nTransfer completed successfully!");
         Console.WriteLine($"\nTransferred amount: R$ {amount:N2}");
@@ -158,7 +173,7 @@ public void Statement(BankAccount account)
     Console.WriteLine($"\nAccount Number: {account.AccountNumber}");
     Console.WriteLine($"Account Type: {GetAccountType(account.AccountType)}");
     Console.WriteLine($"Created At: {account.CreatedAt:dd/MM/yyyy HH:mm}");
-    Console.WriteLine($"Current Balance: R$ {account.Balance:N2}");
+    Console.WriteLine($"\nCurrent Balance: R$ {account.Balance:N2}");
 
     Console.WriteLine();
     Console.WriteLine(new string('-', 125));

@@ -12,8 +12,7 @@ public class BankAccount
     public DateTime? ClosedAt { get; set; }
     public Guid CustomerId { get; set; }
     public Customer Owner { get; set; } = null!;
-    public int FailedLoginAttempts { get; set; } = 0;
-    public DateTime? BlockedUntil { get; set; }
+    
     public List<Transaction> Transactions { get; set; } = new();
     public List<Investment> Investments { get; set; } = new();
     public BitcoinWallet? BitcoinWallet { get; set; }
